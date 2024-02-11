@@ -56,15 +56,43 @@ for day in trading_days:
 
         headline_data = []
 
+        print(data)
+
         if 'feed' in data:
+            possible_headlines = []
+
+            print('hello')
+            
             for article in data['feed']:
-                possible_headlines = []
-                
                 for keyword in company_mentions:
                     if keyword.lower() in article['title'].lower():
-                        possible_headlines.append({'headline': article['title'],
+                        possible_headlines.append({'ticker': ticker, 'headline': article['title'],
                                                            'date': article['time_published']})
-                        
                         break
 
-                headline_data.append(random.choice(possible_headlines))
+            selected_headline_data = random.choice(possible_headlines)
+
+            article_date = pd.to_datetime(article['time_published'], format='%y-%m-%dT%H%M')
+
+            # Get the closing price of the trading day before the article date
+            previous_trading_day = nyse.valid_days(start_date=article_date - pd.DateOffset(days=1), end_date=article_date)
+
+            print(previous_trading_day)
+            
+            if previous_trading_day:
+                previous_trading_day = previous_trading_day[-1]  # Get the last trading day
+                close_price_before = ticker_data.history(start=previous_trading_day, end=previous_trading_day + pd.Timedelta(days=1))['Close'].iloc[0]
+            else:
+                # Handle case when there is no previous trading day (e.g., Monday)
+                close_price_before = None
+
+            # Get the closing price of the trading day after the article date
+            next_trading_day = nyse.valid_days(start_date=article_date, end_date=article_date + pd.DateOffset(days=1))
+            if next_trading_day:
+                next_trading_day = next_trading_day[0]  # Get the first trading day
+                close_price_after = ticker_data.history(start=next_trading_day, end=next_trading_day + pd.Timedelta(days=1))['Close'].iloc[0]
+            else:
+                # Handle case when there is no next trading day (e.g., Friday)
+                close_price_after = None
+
+            
