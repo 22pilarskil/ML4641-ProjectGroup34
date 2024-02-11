@@ -1,0 +1,4 @@
+pickled/
+analyst_ratings_5col_fixed_headlines.csv
+correlations_per_ticker.pkl
+__pycache__/
