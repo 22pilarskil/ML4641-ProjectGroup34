@@ -1,11 +1,9 @@
-from datetime import datetime, timedelta
 from decimal import *
 import yfinance as yf
 from add_info import get_bars, writeToCSV
 import csv
 import pandas as pd
 import os
-import asyncio
 import numpy as np
 from numpy.lib.stride_tricks import sliding_window_view
 
@@ -61,31 +59,32 @@ def add_extra_columns(df):
     df['EMA'] = df['Close'].ewm(span=12, adjust=False).mean()
 
     # Calculate RSI with initial then rolling
-    delta = df['Close'].diff()
-    rsi_period = 14
-    gains = delta.iloc[:rsi_period].where(delta > 0, 0)
-    losses = -delta.iloc[:rsi_period].where(delta < 0, 0)
-    avg_gain = gains.mean()
-    avg_loss = losses.mean()
-    if avg_loss - 0.000001 < 0: 
-        initial_rsi = 100
-    else:
-        rs = avg_gain / avg_loss
-        initial_rsi = 100 - (100 / (1 + rs))
-    df.at[df.index[rsi_period-1], 'RSI'] = initial_rsi
-    for i in range(rsi_period, len(df)):
-        gain = delta.iloc[i] if delta.iloc[i] > 0 else 0
-        loss = -delta.iloc[i] if delta.iloc[i] < 0 else 0
+    df['RSI'] = df['Close']
+    # delta = df['Close'].diff()
+    # rsi_period = 14
+    # gains = delta.iloc[:rsi_period].where(delta > 0, 0)
+    # losses = -delta.iloc[:rsi_period].where(delta < 0, 0)
+    # avg_gain = gains.mean()
+    # avg_loss = losses.mean()
+    # if avg_loss - 0.000001 < 0: 
+    #     initial_rsi = 100
+    # else:
+    #     rs = avg_gain / avg_loss
+    #     initial_rsi = 100 - (100 / (1 + rs))
+    # df.at[df.index[rsi_period-1], 'RSI'] = initial_rsi
+    # for i in range(rsi_period, len(df)):
+    #     gain = delta.iloc[i] if delta.iloc[i] > 0 else 0
+    #     loss = -delta.iloc[i] if delta.iloc[i] < 0 else 0
 
-        avg_gain = (avg_gain * (rsi_period - 1) + gain) / rsi_period
-        avg_loss = (avg_loss * (rsi_period - 1) + loss) / rsi_period
+    #     avg_gain = (avg_gain * (rsi_period - 1) + gain) / rsi_period
+    #     avg_loss = (avg_loss * (rsi_period - 1) + loss) / rsi_period
 
-        if avg_loss - 0.000001 < 0:
-            rsi = 100
-        else:
-            rs = avg_gain / avg_loss
-            rsi = 100 - (100 / (1 + rs))
-        df.at[df.index[i], 'RSI'] = rsi
+    #     if avg_loss - 0.000001 < 0:
+    #         rsi = 100
+    #     else:
+    #         rs = avg_gain / avg_loss
+    #         rsi = 100 - (100 / (1 + rs))
+    #     df.at[df.index[i], 'RSI'] = rsi
     
 
     EMA_26 = df['Close'].ewm(span=26, adjust=False).mean()
@@ -95,6 +94,10 @@ def add_extra_columns(df):
     df['SMA10'] = df['Close'].rolling(window=10, min_periods=1).mean()
     df['SMA20'] = df['Close'].rolling(window=20, min_periods=1).mean()
     df['Next Day Percent Change'] = df['Percent Change'].shift(-1)
+    df['ND2 Percent Change'] = df['Percent Change'].shift(-2)
+    df['ND3 Percent Change'] = df['Percent Change'].shift(-3)
+    df['ND4 Percent Change'] = df['Percent Change'].shift(-4)
+    df['ND5 Percent Change'] = df['Percent Change'].shift(-5)
     return df
 
 def correlate():
@@ -139,7 +142,7 @@ def get_sums_from_pickled(file):
         return [0, 0, 0, 0]
 
     # Get rid of datapoints that have NaN or incomplete rolling windows
-    X = df.iloc[27:-1, :].to_numpy()
+    X = df.iloc[27:-5, :].to_numpy()
     N, _ = X.shape
     sum_xiyi = np.sum(X * X[:, -1, np.newaxis], axis=0)
     sum_xi = np.sum(X, axis=0)
@@ -154,10 +157,10 @@ def main():
     file_startsWith = ""
     for file in os.listdir("pickled"):
         if file_startsWith != file[0]:
-            print(total_sum_xiyi)
-            print(total_sum_xi)
-            print(total_sum_xi2)
-            print(total_N)
+            # print(total_sum_xiyi)
+            # print(total_sum_xi)
+            # print(total_sum_xi2)
+            # print(total_N)
             print(file)
             file_startsWith = file[0]
         [sum_xiyi, sum_xi, sum_xi2, N] = get_sums_from_pickled("pickled/"+file)
@@ -176,7 +179,12 @@ def main():
     numerator = total_N * total_sum_xiyi - total_sum_xi * total_sum_xi[-1]
     denominator = np.sqrt(total_N*total_sum_xi2 - np.square(total_sum_xi)) * np.sqrt(total_N*total_sum_xi2[-1] - np.square(total_sum_xi[-1]))
     corrs = numerator/denominator
-    print(corrs)
+    print(corrs[5])
+    print(corrs[-5])
+    print(corrs[-4])
+    print(corrs[-3])
+    print(corrs[-2])
+    print(corrs[-1])
 
 if __name__ == "__main__":
     main()
