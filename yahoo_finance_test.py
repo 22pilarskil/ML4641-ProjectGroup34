@@ -28,7 +28,18 @@ def get_stock_data(ticker, start_date, end_date):
     # Calculate daily percent change in Close price
     df['Percent Change'] = df['Close'].pct_change() * 100
 
-    return df[['Log Close', 'Log Volume', 'Log Market Cap', 'Volatility', 'RSI', 'Percent Change']]
+    # SMA and EMA calculations
+    df['SMA_10'] = df['Close'].rolling(window=10).mean()
+    df['SMA_20'] = df['Close'].rolling(window=20).mean()
+    df['EMA_12'] = df['Close'].ewm(span=12, adjust=False).mean()
+    df['EMA_26'] = df['Close'].ewm(span=26, adjust=False).mean()
+
+    # MACD and Signal Line
+    df['MACD'] = df['EMA_12'] - df['EMA_26']
+    df['Signal_Line'] = df['MACD'].ewm(span=9, adjust=False).mean()
+
+
+    return df[['Log Close', 'Log Volume', 'Log Market Cap', 'Volatility', 'RSI', 'Percent Change''SMA_10', 'SMA_20', 'EMA_12', 'EMA_26', 'MACD', 'Signal_Line']]
 
 # Example usage
 ticker_data = get_stock_data('AAPL', '2020-01-01', '2021-01-01')
