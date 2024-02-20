@@ -4,9 +4,10 @@ from transformers import BertTokenizer, BertForSequenceClassification
 from sklearn.metrics import accuracy_score
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, classification_report
 
 finance_news = pd.read_csv('data/all-data.csv', encoding = 'UTF8')
-finance_news = finance_news.head(200)
+##finance_news = finance_news.head(200)
 
 finance_news.head()
 
@@ -27,6 +28,7 @@ predictions = classifier.predict(X_tfidf)
 # Calculate and print accuracy
 accuracy = accuracy_score(y, predictions)
 print(f'Baseline Model Accuracy: {accuracy * 100:.2f}%')
+print(f'Baseline Model Classification Report:\n{classification_report(y, predictions)}')
 
 finbert = BertForSequenceClassification.from_pretrained('yiyanghkust/finbert-tone',num_labels=3)
 tokenizer = BertTokenizer.from_pretrained('yiyanghkust/finbert-tone')
@@ -41,4 +43,7 @@ for x in X:
     val = labels[np.argmax(outputs.detach().numpy())]   
     sent_val.append(val)
 
-print(f'Baseline Model Accuracy: {accuracy_score(y, sent_val) * 100:.2f}%')
+print(f'Finbert Model Accuracy: {accuracy_score(y, sent_val) * 100:.2f}%')
+print(f'Finbert Model Classification Report:\n{classification_report(y, sent_val)}')
+
+# F1 score

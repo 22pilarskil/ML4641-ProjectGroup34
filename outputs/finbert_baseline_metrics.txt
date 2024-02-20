@@ -1,0 +1,23 @@
+Baseline Model Accuracy: 86.61%
+Baseline Model Classification Report:
+              precision    recall  f1-score   support
+
+    negative       0.94      0.62      0.75       604
+     neutral       0.84      0.98      0.90      2879
+    positive       0.92      0.73      0.82      1363
+
+    accuracy                           0.87      4846
+   macro avg       0.90      0.78      0.82      4846
+weighted avg       0.88      0.87      0.86      4846
+
+Finbert Model Accuracy: 79.26%
+Finbert Model Classification Report:
+              precision    recall  f1-score   support
+
+    negative       0.79      0.68      0.73       604
+     neutral       0.79      0.92      0.85      2879
+    positive       0.81      0.57      0.67      1363
+
+    accuracy                           0.79      4846
+   macro avg       0.80      0.73      0.75      4846
+weighted avg       0.79      0.79      0.78      4846
