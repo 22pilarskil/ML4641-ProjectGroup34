@@ -14,47 +14,54 @@ import numpy as np
 import chardet
 
 class HeadlineDataset(Dataset):
-    def __init__(self, headlines_file, numerical_folder):
+    def __init__(self, headlines_file, numerical_folder, trading_days_before: int = 0, trading_days_after: int = 1):
         self.numerical_folder = numerical_folder
         self.headlines_file = headlines_file
+        self.trading_days_before = trading_days_before
+        self.trading_days_after = trading_days_after
         self.data = pd.read_csv(headlines_file)
 
     def __len__(self):
         return len(self.data)
 
     def __getitem__(self, idx):
-        text = self.data.iloc[idx, 1]
-        label = self.data.iloc[idx, 0]
-        
-        # Encode label as one-hot vector
-        label_dict = {"positive": 0, "negative": 1, "neutral": 2}
-        label_encoded = label_dict[label]
-        label_one_hot = np.eye(len(label_dict))[label_encoded]
+        headline_info = self.data.iloc[idx]
+        ticker = headline_info['stock']
 
-        # Tokenize text
-        inputs = self.tokenizer.encode_plus(
-            text,
-            None,
-            add_special_tokens=True,
-            max_length=self.max_len,
-            padding='max_length',
-            return_token_type_ids=True,
-            truncation=True,
-            return_attention_mask=True,
-            return_tensors='pt',
-        )
+        numerical_df = pd.read_pickle(os.path.join(self.numerical_folder, ticker + ".pkl"))
 
-        return {
-            'text': text,
-            'input_ids': inputs['input_ids'].flatten(),
-            'attention_mask': inputs['attention_mask'].flatten(),
-            'labels': torch.tensor(label_one_hot, dtype=torch.float)
+        # Problem: Ticker headline dates don't necessarily line up with trading dates
+        dates = numerical_df.index.to_numpy()
+        dates_unix = dates.astype('datetime64[s]').astype('int')
+        headline_date_unix = np.array(headline_info.loc["date"]).astype('datetime64[s]').astype('int')
+        index = np.searchsorted(dates_unix, headline_date_unix, side='right')
+        slice_size = self.trading_days_after + self.trading_days_before + 1
+        if len(numerical_df) <= slice_size:
+            print("Fatal: Cannot create slice of length " + str(slice_size) + " for ticker " + ticker + " with numerical_data of length " + str(len(numerical_df)))
+            raise Exception()
+        elif index - self.trading_days_before < 0 or index + self.trading_days_after >= len(dates):
+            print("Slicing issue for headline date " + str(headline_info.loc["date"]) + " in ticker " + ticker + "...approximating...")
+            if index - self.trading_days_before < 0:
+                index = self.trading_days_before
+            else:
+                index = len(dates) - self.trading_days_after
+        df_slice = slice(index-self.trading_days_before, index+self.trading_days_after)
+        numerical_tensor = torch.tensor(numerical_df.iloc[df_slice].values)
+
+        return_obj = {
+            'title': headline_info['title'],
+            'date': headline_info['date'],
+            'stock': headline_info['stock'],
+            'numerical': numerical_tensor,
+            'labels': torch.tensor(headline_info['percent change'], dtype=torch.float)
         }
+        
+        return return_obj
 
 
-def create_data_loaders(filename, tokenizer, batch_size=32, encoding=None, max_len=256):
+def create_data_loaders(headlines_file, numerical_folder, trading_days_before=0, trading_days_after=1, batch_size=32):
     # Initialize dataset
-    dataset = SentimentAnalysisDataset(filename=filename, tokenizer=tokenizer, encoding=encoding, max_len=max_len)
+    dataset = HeadlineDataset(headlines_file=headlines_file, numerical_folder=numerical_folder, trading_days_before=trading_days_before, trading_days_after=trading_days_after)
     
     # Calculate split sizes
     train_size = int(0.8 * len(dataset))
@@ -119,19 +126,20 @@ import time
 def main():
     data_folder = "data/NumericalData/"
     headlines_file = "data/analyst_ratings_5col_fixed_headlines.csv"
-    x = HeadlineDataLoader(data_folder, headlines_file)
+
+    train_loader, val_loader, test_loader = create_data_loaders(headlines_file, data_folder)
+    t = iter(train_loader)
+    
     start = time.time()
-    files = os.listdir(data_folder)
-    count = 0
-    for file in files:
-        ticker = file.split(".")[0]
-        data = x.load_ticker(ticker, 32)
-        if file.startswith("B"):
-            break
-        count += len(data) / len(data)
+    iters = 20
+    for i in range(iters):
+        x = next(t)
+        if len(x) > 7000:
+            print("woah")
     end = time.time()
     print(end - start)
-    print(count)
+    print(str((end-start)/iters) + "ms per batch")
+    # print(count)
 
 if __name__ == "__main__":
     main()
