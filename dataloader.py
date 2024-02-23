@@ -19,7 +19,7 @@ class HeadlineDataset(Dataset):
         self.headlines_file = headlines_file
         self.trading_days_before = trading_days_before
         self.trading_days_after = trading_days_after
-        self.data = pd.read_csv(headlines_file)
+        self.data = pd.read_pickle(headlines_file)
 
     def __len__(self):
         return len(self.data)
@@ -123,9 +123,21 @@ class HeadlineDataLoader:
 
 import time
 
-def main():
+def clean_up_csv():
     data_folder = "data/NumericalData/"
     headlines_file = "data/analyst_ratings_5col_fixed_headlines.csv"
+    files = os.listdir(data_folder)
+    tickers = []
+    for file in files:
+        tickers.append(file.split(".")[0])
+    
+    df = pd.read_csv(headlines_file)
+    clean_df = df[df['stock'].isin(tickers)]
+    pd.to_pickle(clean_df, "data/cleaned_headlines.pkl")
+
+def main():
+    data_folder = "data/NumericalData/"
+    headlines_file = "data/cleaned_headlines.pkl"
 
     train_loader, val_loader, test_loader = create_data_loaders(headlines_file, data_folder)
     t = iter(train_loader)
@@ -143,4 +155,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-        
+    # clean_up_csv()        
