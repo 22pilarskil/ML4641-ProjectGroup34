@@ -7,99 +7,6 @@ import os
 import numpy as np
 from numpy.lib.stride_tricks import sliding_window_view
 
-def pickle_data():
-    with open("analyst_ratings_5col_fixed_headlines.csv", "r", encoding='utf-8') as f:
-        reader = csv.reader(f, delimiter=",")
-        next(reader)
-        line = next(reader)
-        all_tickers = []
-        startingLetter = ''
-        while line is not None:
-            ticker = line[3]
-            if ticker in all_tickers:
-                line = next(reader, None)
-                continue
-            all_tickers.append(ticker)
-            if ticker[0] != startingLetter:
-                print(ticker)
-                startingLetter = ticker[0]
-            line = next(reader, None)
-        
-        startingFromTicker = "CUT"
-        all_tickers = all_tickers[all_tickers.index(startingFromTicker)+1:]
-        yfTickers = yf.Tickers(" ".join(all_tickers))
-        for key in yfTickers.tickers:
-            ticker = key
-            bars = yfTickers.tickers[key].history("max")
-            if bars.empty:
-                print("ticker " + ticker + ":\t Not Included")
-                continue
-            print("ticker " + ticker + ":\t Included")
-            bars.to_pickle('pickled/'+ticker+".pkl")
-            continue
-
-def get_pickled_tickers():
-    filenames = os.listdir("pickled")
-    for i in range(len(filenames)):
-        splits = filenames[i].split(".")
-        if len(splits) > 2:
-            print(filenames[i])
-        filenames[i] = splits[0]
-    return filenames
-
-def add_extra_columns(df):
-    # Columns are [(0): Open, (1): High, (2): Low, (3): Close, (4): Volume, (5): % Change, (6): Volatility, (7): EMA (12day), 
-    #       (8): RSI, (9): MACD, (10): Signal Line, (11): SMA10, (12): SMA20, (13): Next Day % Change]
-    df = df.iloc[:, :5]
-    df = df.dropna()
-    if len(df) < 100:
-        return None
-    df['Percent Change'] = df['Close'].pct_change() * 100
-    df['Volatility'] = df['High'] - df['Low']
-    df['EMA'] = df['Close'].ewm(span=12, adjust=False).mean()
-
-    # Calculate RSI with initial then rolling
-    df['RSI'] = df['Close']
-    # delta = df['Close'].diff()
-    # rsi_period = 14
-    # gains = delta.iloc[:rsi_period].where(delta > 0, 0)
-    # losses = -delta.iloc[:rsi_period].where(delta < 0, 0)
-    # avg_gain = gains.mean()
-    # avg_loss = losses.mean()
-    # if avg_loss - 0.000001 < 0: 
-    #     initial_rsi = 100
-    # else:
-    #     rs = avg_gain / avg_loss
-    #     initial_rsi = 100 - (100 / (1 + rs))
-    # df.at[df.index[rsi_period-1], 'RSI'] = initial_rsi
-    # for i in range(rsi_period, len(df)):
-    #     gain = delta.iloc[i] if delta.iloc[i] > 0 else 0
-    #     loss = -delta.iloc[i] if delta.iloc[i] < 0 else 0
-
-    #     avg_gain = (avg_gain * (rsi_period - 1) + gain) / rsi_period
-    #     avg_loss = (avg_loss * (rsi_period - 1) + loss) / rsi_period
-
-    #     if avg_loss - 0.000001 < 0:
-    #         rsi = 100
-    #     else:
-    #         rs = avg_gain / avg_loss
-    #         rsi = 100 - (100 / (1 + rs))
-    #     df.at[df.index[i], 'RSI'] = rsi
-    
-
-    EMA_26 = df['Close'].ewm(span=26, adjust=False).mean()
-    df['MACD'] = df['EMA'] - EMA_26
-
-    df['Signal_Line'] = df['MACD'].ewm(span=9, adjust=False).mean()
-    df['SMA10'] = df['Close'].rolling(window=10, min_periods=1).mean()
-    df['SMA20'] = df['Close'].rolling(window=20, min_periods=1).mean()
-    df['Next Day Percent Change'] = df['Percent Change'].shift(-1)
-    df['ND2 Percent Change'] = df['Percent Change'].shift(-2)
-    df['ND3 Percent Change'] = df['Percent Change'].shift(-3)
-    df['ND4 Percent Change'] = df['Percent Change'].shift(-4)
-    df['ND5 Percent Change'] = df['Percent Change'].shift(-5)
-    return df
-
 def correlate():
     pickled_files = os.listdir("pickled")
     correlation_df = pd.read_pickle("correlations.pkl")
@@ -134,70 +41,74 @@ def correlate():
     correlation_df.to_pickle("correlations.pkl")
 
 def get_sums_from_pickled(file):
-    # Columns are [(0): Open, (1): High, (2): Low, (3): Close, (4): Volume, (5): % Change, (6): Volatility, (7): EMA (12day), 
-    #       (8): RSI, (9): MACD, (10): Signal Line, (11): SMA10, (12): SMA20, (13): Next Day % Change]
+    # Add Next Day Percent Change for ND1, ND2, ND3, ND4, ND5
     df = pd.read_pickle(file)
-    df = add_extra_columns(df)
-    if df is None:
-        return [0, 0, 0, 0]
-
-    # Get rid of datapoints that have NaN or incomplete rolling windows
-    X = df.iloc[27:-5, :].to_numpy()
-    N, _ = X.shape
-    sum_xiyi = np.sum(X * X[:, -1, np.newaxis], axis=0)
+    df = df.dropna()
+    garbage = df.index[df['Close'] < 0.01].tolist()
+    if len(garbage) > 0:
+        df = df[:garbage[0]] # Stocks that dip below 1 penny aren't worth including in correlations
+    if len(df) < 6: return None
+    for i in range(5):
+        df["ND" + str(i+1) + " Percent Change"] = df["Percent Change"].shift(-(i+1))
+    df = df[:-5]
+    X = df.to_numpy()
+    N, D = X.shape
+    sum_xiyi = np.zeros((D, D), dtype=np.float64)
+    for i in range(D):
+        temp_xiyi = np.sum(X * X[:, i, np.newaxis], axis=0)
+        sum_xiyi[i] = temp_xiyi
     sum_xi = np.sum(X, axis=0)
     sum_xi2 = np.sum(np.square(X), axis=0)
     return [sum_xiyi, sum_xi, sum_xi2, N]
-    
-def main():
-    total_sum_xiyi = None
-    total_sum_xi = None
-    total_sum_xi2 = None
-    total_N = None
-    file_startsWith = ""
-    for file in os.listdir("pickled"):
-        if file_startsWith != file[0]:
-            # print(total_sum_xiyi)
-            # print(total_sum_xi)
-            # print(total_sum_xi2)
-            # print(total_N)
+
+def get_sums_from_files(folder, files, verbose=False):
+    running_sum_xiyi = None
+    running_sum_xi = None
+    running_sum_xi2 = None
+    running_N = None
+    start = "EIUWFIUENSK"
+    for file in files:
+        if verbose and not file.startswith(start):
             print(file)
-            file_startsWith = file[0]
-        [sum_xiyi, sum_xi, sum_xi2, N] = get_sums_from_pickled("pickled/"+file)
-        if total_sum_xiyi is None:
-            total_sum_xiyi = sum_xiyi
-            total_sum_xi = sum_xi
-            total_sum_xi2 = sum_xi2
-            total_N = N
-        else:
-            total_sum_xiyi += sum_xiyi
-            total_sum_xi += sum_xi
-            total_sum_xi2 += sum_xi2
-            total_N += N
+            start = file[0]
+        path = os.path.join(folder, file)
+        sums = get_sums_from_pickled(path)
+        if sums is None: continue
         
+        if running_sum_xiyi is None:
+            [running_sum_xiyi, running_sum_xi, running_sum_xi2, running_N] = sums
+        else:
+            running_sum_xiyi += sums[0]
+            running_sum_xi += sums[1]
+            running_sum_xi2 += sums[2]
+            running_N += sums[3]
+    
+    return [running_sum_xiyi, running_sum_xi, running_sum_xi2, running_N]
+
+def correlate_files(folder, files, verbose=False):
+    [total_sum_xiyi, total_sum_xi, total_sum_xi2, total_N] = get_sums_from_files(folder, files, verbose)
+    
     # https://mathoverflow.net/questions/57908/combining-correlation-coefficients
-    numerator = total_N * total_sum_xiyi - total_sum_xi * total_sum_xi[-1]
-    denominator = np.sqrt(total_N*total_sum_xi2 - np.square(total_sum_xi)) * np.sqrt(total_N*total_sum_xi2[-1] - np.square(total_sum_xi[-1]))
-    corrs = numerator/denominator
-    print(corrs[5])
-    print(corrs[-5])
-    print(corrs[-4])
-    print(corrs[-3])
-    print(corrs[-2])
-    print(corrs[-1])
+    corrs = np.zeros(total_sum_xiyi.shape, dtype=np.float64)
+    D, _ = corrs.shape
+    for i in range(D):
+        for j in range(D):
+            numerator = total_N * total_sum_xiyi[i,j] - total_sum_xi[i] * total_sum_xi[j]
+            denominator = np.sqrt(total_N*total_sum_xi2[i] - np.square(total_sum_xi[i])) * np.sqrt(total_N*total_sum_xi2[j] - np.square(total_sum_xi[j]))
+            corrs[i,j] = numerator/denominator
+    # numerator = total_N * total_sum_xiyi - total_sum_xi * total_sum_xi[-1]
+    # denominator = np.sqrt(total_N*total_sum_xi2 - np.square(total_sum_xi)) * np.sqrt(total_N*total_sum_xi2[-1] - np.square(total_sum_xi[-1]))
+    # corrs = numerator/denominator
+    return corrs
+
+def main():
+    save_file = "data/correlations/confusion_matrix.npy"
+    folder = "data/NumericalData"
+    files = os.listdir(folder)
+    corrs = correlate_files(folder, files, verbose=True)
+    np.save(save_file, corrs)
+    # x = np.load(save_file)
+    # print(x)
 
 if __name__ == "__main__":
-    a = np.array([[1.00000000e+00, -9.88451150e-05, 1.36170745e-01, 0.12766858202304532, 0.11967454889627767, 0.06518136880451625],
-                  [-9.88451150e-05, 1.00000000e+00, -4.40025189e-04, 0.13617199340953318, 0.12766975301551023, 0.02127666787005256],
-                  [1.36170745e-01, -4.40025189e-04, 1.00000000e+00, -0.00044002562574918974, 0.13617198390849333, 0.022697970385746433],
-                  [0.12766858202304532, 0.13617199340953318,-0.00044002562574918974, 1.00000000e+00, -0.00044002463617585756, 0.02420961496802328],
-                  [0.11967454889627767, 0.12766975301551023, 0.13617198390849333, -0.00044002463617585756, 1.0, -9.883276981880334e-05],
-                  [0.06518136880451625, 0.02127666787005256, 0.022697970385746433, 0.02420961496802328, -9.883276981880334e-05, 1.0]])
-    np.savetxt('nd_correlations.txt', a)
-    print(a)
-    b = np.loadtxt('nd_correlations.txt')
-    print(b)
-    print(np.all(np.abs(a-a.T) < 0.000001))
-    # main()
-    # bars = yf.Ticker("TGT").history()
-    # print(bars)
+    main()
