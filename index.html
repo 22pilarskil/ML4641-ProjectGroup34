@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Market Analysis Proposal</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h1, h2 { color: #333; }
+        p { text-align: justify; }
+        a { color: blue; }
+        .reference { margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Introduction</h1>
+    <p>The stock market has long been analyzed in the attempt to gain an upper hand in the investing world. The earliest works in this field used LSTMs, models specializing in handling sequential data, to predict stock prices based on historical stock data (Vohra & Savaridassan). More advanced models recently have adapted, accounting for sentiment of corresponding news headlines in their predictions (Paul & Vishnoi). We will attempt to do the same using Miguel Aenlle’s stock headline dataset. This dataset consists of 1.4 million entries, each composed of a headline, the stock ticker associated with the headline, and the date it was published. Pricing information is not immediately available, but can be obtained using Yahoo Finance’s API. 
+<a href="https://www.kaggle.com/datasets/miguelaenlle/massive-stock-news-analysis-db-for-nlpbacktests?resource=download">Miguel Aenlle’s stock headline dataset</a>.</p>
+    
+    <h2>Problem</h2>
+    <p>Our project aims to overcome limitations in existing models that struggle with the short-term volatility and randomness of stock prices. Current LSTM and RNN architectures which solely rely on historical stock data generalize poorly to unseen data due to the random walk nature of stock price changes (Selvin et. al). Market sentiment approaches often oversimplify by reducing complex headline data to a single sentiment score while ignoring market trends (Deveikyte et. al). Our approach will differ by integrating these two strategies into one, with financial metrics inputted along with textual data to provide a more robust and complete picture of the financial landscape in an attempt to balance the shortcomings of using each in isolation.  </p>
+    
+    <h2>Methods</h2>
+    <p>Our model will integrate stock headlines with numerical financial metrics by first using a BERT model to process our text data before passing these textual embeddings into a cross-attention layer to integrate financial metrics into our final output. We plan to build two models to experiment with both classification (upwards change, no change, downwards change) and regression (percent change prediction) tasks. We will also train a third sentiment analysis model that takes in only headline data as a baseline to compare performance between the classifier and regression models with the added financial metrics component. Preprocessing will involve logarithmic scaling for large data points and an exploratory analysis to filter redundant features. Additionally, we'll refine headline data with techniques like stop words removal and stemming before input to BERT.</p>
+    
+    <h2>Results and Discussion</h2>
+    <p>To evaluate our classification model, we will employ a confusion matrix alongside metrics like accuracy, precision, recall, and F1 score, targeting at least 50% accuracy to align with similar studies (Fazlija). We will emphasize recall over precision, aiming for a balanced F1 score, given the higher cost of missing positive stock movements. For our regression model, residual plots will help assess prediction accuracy, with performance measured by mean absolute error (MAE), seeking an MAE under 5 percentage points as seen in comparable models (Taylor & Ng). Additionally, gradient analysis will verify the influence of headline inputs versus financial metrics. We anticipate superior performance from the regression model based on exact prices (Taylor & Ng) and expect integrating financial data with headlines to enhance accuracy, following Kaeley et al.'s findings.
+</p>
+    
+    <h2>References</h2>
+      <div class="reference">[1] H. Kaeley, Y. Qiao, N. Bagherzadeh, "Support for Stock Trend Prediction Using Transformers and Sentiment Analysis", <a href="https://arxiv.org/pdf/2305.14368.pdf" target="_blank">https://arxiv.org/pdf/2305.14368.pdf</a> (accessed Feb. 22, 2024).</div>
+      <div class="reference">[2] J. Deveikyte, H. Geman, C. Piccari, A. Provetti, "A sentiment analysis approach to the prediction of market volatility", <a href="https://www.frontiersin.org/articles/10.3389/frai.2022.836809/full" target="_blank">https://www.frontiersin.org/articles/10.3389/frai.2022.836809/full</a> (accessed Feb. 22, 2024).</div>
+      <div class="reference">[3] K. Taylor, V. J. Ng, "Natural Language Processing and Multimodal Stock Price Prediction", <a href="https://arxiv.org/pdf/2401.01487.pdf" target="_blank">https://arxiv.org/pdf/2401.01487.pdf</a> (accessed Feb. 22, 2024).</div>
+      <div class="reference">[4] L. Ariton, "No, lstms can’t predict stock prices - Analytics Vidhya - Medium", <a href="https://medium.com/analytics-vidhya/no-lstms-cant-predict-stock-prices-11f10dcb35d6" target="_blank">https://medium.com/analytics-vidhya/no-lstms-cant-predict-stock-prices-11f10dcb35d6</a> (accessed Feb. 22, 2024).</div>
+      <div class="reference">[5] S. Paul, S. Vishnoi, "Real-Time stock trend prediction via sentiment analysis of news article", <a href="https://doi.org/10.2139/ssrn.3753015" target="_blank">https://doi.org/10.2139/ssrn.3753015</a> (accessed Feb. 22, 2024).</div>
+      <div class="reference">[6] S. Selvin, V. Ravi, G. E.A., V. K. Menon, S. K.P., "Stock Price Prediction Using LSTM, RNN and CNN-Sliding Window Model", <a href="https://www.researchgate.net/publication/325666831_NSE_Stock_Market_Prediction_Using_Deep-Learning_Models" target="_blank">https://www.researchgate.net/publication/325666831_NSE_Stock_Market_Prediction_Using_Deep-Learning_Models</a> (accessed Feb. 22, 2024).</div>
+      <div class="reference">[7] S. Vohra, P. Savaridassan, "Stock price trend analysis and prediction of closing price using LSTM", <a href="http://dx.doi.org/10.1109/iccci56745.2023.10128260" target="_blank">http://dx.doi.org/10.1109/iccci56745.2023.10128260</a> (accessed Feb. 22, 2024).</div>
+
+</body>
+</html>
