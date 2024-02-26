@@ -1,20 +1,48 @@
 import torch
 from torch import nn
 from transformers import BertModel
+from torch.nn import TransformerEncoder, TransformerEncoderLayer
 
 class BertForSentimentAnalysis(nn.Module):
-    def __init__(self, pretrained_model_name='bert-base-uncased', num_labels=3):
-
+    def __init__(self, pretrained_model_name='bert-base-uncased', num_labels=3, num_financial_metrics=15, seq_length=10, hidden_dim=64, is_regression=True):
         super(BertForSentimentAnalysis, self).__init__()
+        
         self.bert = BertModel.from_pretrained(pretrained_model_name)
+        self.is_regression = is_regression  # Store the mode of the model
+
+        # Transformer encoder for financial data
+        self.financial_transformer = TransformerEncoder(
+            TransformerEncoderLayer(d_model=num_financial_metrics, nhead=1, batch_first=True, dim_feedforward=hidden_dim),
+            num_layers=1
+        )
+
+        # The output layer's dimensions depend on whether the model is for regression or classification
+        output_dim = 1 if is_regression else num_labels
+        self.output_layer = nn.Linear(768 + num_financial_metrics, output_dim)
+
         self.dropout = nn.Dropout(0.1)
-        self.classifier = nn.Linear(768, num_labels)
 
-    def forward(self, input_ids, attention_mask):
+    def forward(self, input_ids, attention_mask, financial_data):
+        # Process text data through BERT
+        has_nan = torch.isnan(financial_data).any()
+        if has_nan:
+            print(financial_data)
+            raise ValueError()
 
-        outputs = self.bert(input_ids=input_ids, attention_mask=attention_mask)
-        cls_output = outputs.last_hidden_state[:, 0, :]  # Shape: (batch_size, hidden_size)
-        cls_output = self.dropout(cls_output)
-        logits = self.classifier(cls_output)  # Shape: (batch_size, num_labels)
-        return logits
+
+        bert_outputs = self.bert(input_ids=input_ids, attention_mask=attention_mask)
+        cls_output = bert_outputs.last_hidden_state[:, 0, :]  # Shape: (batch_size, 768)
+
+        # Process financial data through Transformer
+        financial_outputs = self.financial_transformer(financial_data.float())  # Shape: (batch_size, seq_length, num_financial_metrics)
+        cls_financial_output = financial_outputs[:, 0, :]  # Take the first output
+
+        # Combine outputs from BERT and financial data
+        combined_output = torch.cat((cls_output, cls_financial_output), dim=1)
+        combined_output = self.dropout(combined_output)
+
+        # Apply the output layer
+        output = self.output_layer(combined_output)
+
+        return output
 
