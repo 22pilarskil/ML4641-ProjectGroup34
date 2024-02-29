@@ -2,3 +2,4 @@ data/analyst_ratings_5col_fixed_headlines.csv
 __pycache__/
 pickled/
 data/cleaned_headlines.pkl
+data/NumericalData_pct/*

@@ -101,12 +101,104 @@ def correlate_files(folder, files, verbose=False):
     # corrs = numerator/denominator
     return corrs
 
+def get_max(folder, files):
+    curr_max = np.zeros(15)
+    startsWith = "X"
+    
+    total_stocks = 0
+    total_over = 0
+    for file in files:
+        # if file == "TOPS.pkl": continue
+        if not file.startswith(startsWith):
+            print(file)
+            startsWith = file[0]
+        path = os.path.join(folder, file)
+        df = pd.read_pickle(path)
+        if df['Market Cap'].isnull().values.any():
+            df['Market Cap'] = 0
+            df['Log Market Cap'] = 0
+        df = df.dropna()
+        data = df.to_numpy()
+        if len(data) == 0: continue
+        maxes = data.max(axis=0)
+        total_stocks += 1
+        if maxes[0] > 1e2:
+            # print("Max close of " + '{:.2e}'.format(maxes[0]) + " on ticker: " + file.split(".")[0])
+            total_over += 1
+            continue
+        curr_max = np.maximum(maxes, curr_max)
+        
+        if np.isnan(curr_max).any():
+            print(df)
+            print(df.columns)
+            print(curr_max)
+            print(file)
+            return
+    for name,max in zip(df.columns, curr_max):
+        print(name + ": " + '{:.2e}'.format(max))
+    print(df.columns)
+    print(curr_max)
+    print("total stocks: " + str(total_stocks))
+    print("total over: " + str(total_over))
+
+def get_count_na(folder, files):
+    startsWith = "X"
+    total = 0
+    loss = 0
+    for file in files:
+        if not file.startswith(startsWith):
+            print(file)
+            startsWith = file[0]
+        
+        path = os.path.join(folder, file)
+        df_a = pd.read_pickle(path)
+        orig = len(df_a)
+        df = df_a.dropna()
+        diff = orig - len(df)
+        total += orig
+        loss += diff
+        if diff > 0:
+            print(df_a.isnull().sum())
+    print(total)
+    print(loss)
+    print((total-loss)/total)
+
+def add_pct_changes(folder, files, target_folder="data/NumericalData_pct"):
+    pd.options.mode.chained_assignment = None
+    startsWith = "X"
+    for file in files:
+        if not file.startswith(startsWith):
+            print(file)
+            startsWith = file[0]
+        path = os.path.join(folder, file)
+        df = pd.read_pickle(path)
+        df["Close pct"] = df["Close"].pct_change(fill_method=None) * 100
+        pct_df = df.iloc[:,-1:]
+        if len(pct_df) == 0: continue
+        pct_df["Volume pct"] = df["Volume"].pct_change() * 100
+        pct_df["Market Cap pct"] = df["Market Cap"].pct_change(fill_method=None) * 100
+        pct_df["Log Close pct"] = df["Log Close"].pct_change(fill_method=None) * 100
+        pct_df["Log Volume pct"] = df["Log Volume"].pct_change() * 100
+        pct_df["Log Market Cap pct"] = df["Log Market Cap"].pct_change(fill_method=None) * 100
+        pct_df["Volatility pct"] = df["Volatility"].pct_change(fill_method=None) * 100
+        pct_df["RSI pct"] = df["RSI"].pct_change() * 100
+        pct_df["SMA_10 pct"] = df["SMA_10"].pct_change(fill_method=None) * 100
+        pct_df["SMA_20 pct"] = df["SMA_20"].pct_change(fill_method=None) * 100
+        pct_df["EMA_12 pct"] = df["EMA_12"].pct_change() * 100
+        pct_df["EMA_26 pct"] = df["EMA_26"].pct_change() * 100
+        pct_df["MACD pct"] = df["MACD"].pct_change() * 100
+        pct_df["Signal_Line pct"] = df["Signal_Line"].pct_change() * 100
+        pct_df = pct_df[1:]
+        pct_df.fillna(0, inplace=True)
+        pd.to_pickle(pct_df, os.path.join(target_folder, file))
+
 def main():
     save_file = "data/correlations/confusion_matrix.npy"
     folder = "data/NumericalData"
     files = os.listdir(folder)
-    corrs = correlate_files(folder, files, verbose=True)
-    np.save(save_file, corrs)
+    add_pct_changes(folder, files)
+    # corrs = correlate_files(folder, files, verbose=True)
+    # np.save(save_file, corrs)
     # x = np.load(save_file)
     # print(x)
 
