@@ -8,7 +8,7 @@ from run_model import train_model, evaluate_model
 
 def run_training():
 
-    data_folder = "data/NumericalData/"
+    data_folder = "data/NumericalData_pct/"
     headlines_file = "data/cleaned_headlines.pkl"
     pretrained_model_name = 'bert-base-uncased'
     batch_size = 16
@@ -20,9 +20,9 @@ def run_training():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
 
-    optimizer = AdamW(model.parameters(), lr=2e-5)
+    optimizer = AdamW(model.parameters(), lr=2e-7)
 
-    epochs = 3  # Adjust as needed
+    epochs = 100  # Adjust as needed
     results_dir = "./training_results"
     os.makedirs(results_dir, exist_ok=True)
     weights_dir = os.path.join(results_dir, "weights")

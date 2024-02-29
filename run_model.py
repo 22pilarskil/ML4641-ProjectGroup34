@@ -2,7 +2,7 @@ import torch
 from torch import nn
 from sklearn.metrics import mean_squared_error, r2_score, f1_score, accuracy_score
 import numpy as np
-
+import pickle
 
 def get_loss_function(model):
     if model.is_regression:
@@ -11,7 +11,17 @@ def get_loss_function(model):
         return nn.CrossEntropyLoss()
 
 
+def check_gradients_for_nan(model):
+    for name, parameter in model.named_parameters():
+        if parameter.grad is not None:  # Parameters might not have gradients if they are not trainable or didn't participate in the forward pass
+            if torch.isnan(parameter.grad).any():
+                print(f"NaN gradient found in {name}")
+                return True  # Indicate that a NaN gradient was found
+    return False  # No NaN gradients were found
+
+
 def train_model(epoch, model, loader, optimizer, device):
+
     model.train()
     loss_fn = get_loss_function(model)
     total_loss = 0
@@ -35,11 +45,21 @@ def train_model(epoch, model, loader, optimizer, device):
             outputs = outputs.squeeze(-1)
             labels = labels.float()  # Ensure labels are float type for regression
 
-        print("OUTPUTS", outputs)
         loss = loss_fn(outputs, labels)
-        print("LOSS", loss)
         loss.backward()
-        optimizer.step()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1)
+
+        if check_gradients_for_nan(model):
+            with open("financial_data.pkl", "wb") as f:
+                pickle.dump(financial_data, f)
+            print(outputs)
+            print(torch.max(financial_data), torch.min(financial_data))
+            raise ValueError("NaN gradient detected, stopping training")
+        else:
+            optimizer.step()
+
+        optimizer.step()  # Proceed with optimizer step if no NaN gradients were detected
+        print(f"LOSS: {loss.item()}, batch {batch_num} / {len(loader)}")
 
         total_loss += loss.item()
 

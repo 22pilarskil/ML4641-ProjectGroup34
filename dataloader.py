@@ -13,11 +13,12 @@ import pandas as pd
 import numpy as np
 import chardet
 from transformers import AdamW, BertTokenizer
+from dateutil import parser
+
 
 class HeadlineDataset(Dataset):
 
     def __init__(self, headlines_file, numerical_folder, trading_days_before, trading_days_after):
-        
         self.numerical_folder = numerical_folder
         self.headlines_file = headlines_file
         self.trading_days_before = trading_days_before
@@ -27,32 +28,53 @@ class HeadlineDataset(Dataset):
         self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
     def __len__(self):
-
         return len(self.data)
 
     def __getitem__(self, idx):
+        if idx >= len(self):
+            raise IndexError("Index out of bounds")
+        return self.get_item(idx)
+
+    def get_item(self, idx, excludes=["Log Volume pct", "Log Close pct", "Log Market Cap pct", "Volume pct", "Signal_Line pct", "MACD pct", "Volatility pct"]):
 
         headline_info = self.data.iloc[idx]
         ticker = headline_info['stock']
+
+        headline_date_timestamp = parser.parse(headline_info['date'])
+        headline_date_timestamp = headline_date_timestamp.replace(tzinfo=None)
 
         numerical_df = pd.read_pickle(os.path.join(self.numerical_folder, ticker + ".pkl"))
 
         dates = numerical_df.index.to_numpy()
         dates_unix = dates.astype('datetime64[s]').astype('int')
-        headline_date_unix = np.array(headline_info.loc["date"]).astype('datetime64[s]').astype('int')
+        headline_date_unix = np.array(headline_date_timestamp).astype('datetime64[s]').astype('int')
         index = np.searchsorted(dates_unix, headline_date_unix, side='right')
-        slice_size = self.trading_days_after + self.trading_days_before + 1
-        if len(numerical_df) <= slice_size:
-            print("Fatal: Cannot create slice of length " + str(slice_size) + " for ticker " + ticker + " with numerical_data of length " + str(len(numerical_df)))
-            raise Exception()
-        elif index - self.trading_days_before < 0 or index + self.trading_days_after >= len(dates):
-            print("Slicing issue for headline date " + str(headline_info.loc["date"]) + " in ticker " + ticker + "...approximating...")
-            if index - self.trading_days_before < 0:
-                index = self.trading_days_before
-            else:
-                index = len(dates) - self.trading_days_after
-        df_slice = slice(index-self.trading_days_before, index+self.trading_days_after)
-        numerical_tensor = torch.tensor(numerical_df.iloc[df_slice].values)
+
+        if index - self.trading_days_before < 0 or index + self.trading_days_after >= len(dates):
+            # Try next item if this one is problematic due to slicing issues
+            print("Slicing issue, moving to next item.")
+            return self.get_item(idx + 1)
+
+        slice_indices = slice(index-self.trading_days_before, index+self.trading_days_after)
+        numerical_slice = numerical_df.iloc[slice_indices]
+
+        numerical_slice = numerical_slice.drop(columns=excludes, errors='ignore')
+
+        # Identify columns with nan values before converting to a tensor
+        nan_columns = numerical_slice.columns[numerical_slice.isna().any()].tolist()
+        if nan_columns:  # If there are any columns with nan values
+            print(f"nan found in numerical data columns: {nan_columns}")
+            numerical_slice.loc[:, nan_columns] = 0
+        numerical_slice /= 100
+
+        max_col = numerical_slice.abs().max().idxmax()
+        max_row_index = numerical_slice[max_col].abs().idxmax()
+        max_val = numerical_slice.loc[max_row_index, max_col]
+        print(f"The maximum absolute value is {max_val} in column {max_col} for index {headline_date_timestamp} for stock {ticker}")
+
+
+        # Convert the cleaned numerical_slice DataFrame to a tensor
+        numerical_tensor = torch.tensor(numerical_slice.values, dtype=torch.float)
 
         inputs = self.tokenizer.encode_plus(
             headline_info['title'],
@@ -60,23 +82,18 @@ class HeadlineDataset(Dataset):
             add_special_tokens=True,
             max_length=self.max_len,
             padding='max_length',
-            return_token_type_ids=True,
+            return_token_type_ids=False,
             truncation=True,
             return_attention_mask=True,
             return_tensors='pt',
         )
 
-        return_obj = {
-            'title': headline_info['title'],
+        return {
             'input_ids': inputs['input_ids'].flatten(),
             'attention_mask': inputs['attention_mask'].flatten(),
-            'date': headline_info['date'],
-            'stock': headline_info['stock'],
             'numerical': numerical_tensor,
             'labels': torch.tensor(headline_info['percent change'], dtype=torch.float)
         }
-
-        return return_obj
 
 
 def create_data_loaders(headlines_file, numerical_folder, trading_days_before, trading_days_after, batch_size=32):
@@ -96,7 +113,7 @@ def create_data_loaders(headlines_file, numerical_folder, trading_days_before, t
     val_dataset = Subset(dataset, val_indices)
     test_dataset = Subset(dataset, test_indices)
 
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)  # Shuffle only for training set
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False)  # Shuffle only for training set
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 

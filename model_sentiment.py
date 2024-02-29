@@ -4,7 +4,7 @@ from transformers import BertModel
 from torch.nn import TransformerEncoder, TransformerEncoderLayer
 
 class BertForSentimentAnalysis(nn.Module):
-    def __init__(self, pretrained_model_name='bert-base-uncased', num_labels=3, num_financial_metrics=15, seq_length=10, hidden_dim=64, is_regression=True):
+    def __init__(self, pretrained_model_name='bert-base-uncased', num_labels=3, num_financial_metrics=7, seq_length=10, hidden_dim=11, is_regression=True):
         super(BertForSentimentAnalysis, self).__init__()
         
         self.bert = BertModel.from_pretrained(pretrained_model_name)
@@ -13,7 +13,7 @@ class BertForSentimentAnalysis(nn.Module):
         # Transformer encoder for financial data
         self.financial_transformer = TransformerEncoder(
             TransformerEncoderLayer(d_model=num_financial_metrics, nhead=1, batch_first=True, dim_feedforward=hidden_dim),
-            num_layers=1
+            num_layers=2
         )
 
         # The output layer's dimensions depend on whether the model is for regression or classification
@@ -24,10 +24,9 @@ class BertForSentimentAnalysis(nn.Module):
 
     def forward(self, input_ids, attention_mask, financial_data):
         # Process text data through BERT
-        has_nan = torch.isnan(financial_data).any()
-        if has_nan:
-            print(financial_data)
-            raise ValueError()
+
+        if torch.isnan(financial_data).any():
+            raise ValueError("NaN detected in financial data input")
 
 
         bert_outputs = self.bert(input_ids=input_ids, attention_mask=attention_mask)
@@ -37,7 +36,6 @@ class BertForSentimentAnalysis(nn.Module):
         financial_outputs = self.financial_transformer(financial_data.float())  # Shape: (batch_size, seq_length, num_financial_metrics)
         cls_financial_output = financial_outputs[:, 0, :]  # Take the first output
 
-        # Combine outputs from BERT and financial data
         combined_output = torch.cat((cls_output, cls_financial_output), dim=1)
         combined_output = self.dropout(combined_output)
 
