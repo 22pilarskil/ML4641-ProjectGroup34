@@ -76,9 +76,15 @@ with open('output_dataset.csv', 'a', newline='') as output_file:
                 if 'longName' in ticker_data.info:
                     name = ticker_data.info['longName'].split()[0]
 
-                    company_mentions = [ticker, name]
+                    # Check the length of the ticker and add exchange name if less than 3 characters
+                    if len(ticker) < 3:
+                        ticker_with_exchange = ticker_data.info['exchange'] + ':' + ticker
+                    else:
+                        ticker_with_exchange = ticker
+
+                    company_mentions = [ticker_with_exchange, name]
                 else:
-                    company_mentions = [ticker]
+                    company_mentions = [ticker_with_exchange]
 
                 if 'feed' in data:
                     filtered_headlines = []
