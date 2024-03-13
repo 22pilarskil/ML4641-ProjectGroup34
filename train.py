@@ -8,7 +8,7 @@ from model_sentiment import BertForSentimentAnalysis  # Assuming the model class
 from datasets import create_data_loaders
 from run_sentiment import train_model, evaluate_model
 
-filename = '../liam_test/all-data.csv'
+filename = '../liam_test/all-data.csv.csv'
 tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')  # Example tokenizer
 
 batch_size = 32
