@@ -14,7 +14,8 @@ import numpy as np
 import chardet
 from transformers import AdamW, BertTokenizer
 from dateutil import parser
-
+seed = 42
+torch.manual_seed(seed)
 
 class HeadlineDataset(Dataset):
 
@@ -23,7 +24,8 @@ class HeadlineDataset(Dataset):
         self.headlines_file = headlines_file
         self.trading_days_before = trading_days_before
         self.trading_days_after = trading_days_after
-        self.data = pd.read_pickle(headlines_file)
+        df = pd.read_pickle(headlines_file)
+        self.data = df.sample(frac=1, random_state=1).reset_index(drop=True)
         self.max_len = 256
         self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
@@ -35,7 +37,7 @@ class HeadlineDataset(Dataset):
             raise IndexError("Index out of bounds")
         return self.get_item(idx)
 
-    def get_item(self, idx, excludes=["Log Volume pct", "Log Close pct", "Log Market Cap pct", "Volume pct", "Signal_Line pct", "MACD pct", "Volatility pct"]):
+    def get_item(self, idx, excludes=[]):
 
         headline_info = self.data.iloc[idx]
         ticker = headline_info['stock']
@@ -43,7 +45,12 @@ class HeadlineDataset(Dataset):
         headline_date_timestamp = parser.parse(headline_info['date'])
         headline_date_timestamp = headline_date_timestamp.replace(tzinfo=None)
 
-        numerical_df = pd.read_pickle(os.path.join(self.numerical_folder, ticker + ".pkl"))
+
+        try:
+            numerical_df = pd.read_pickle(os.path.join(self.numerical_folder, ticker + ".pkl"))
+        except FileNotFoundError:
+            # print(f"Pickle file for {ticker} not found. Moving to next item.")
+            return self.get_item(idx + 1, excludes)
 
         dates = numerical_df.index.to_numpy()
         dates_unix = dates.astype('datetime64[s]').astype('int')
@@ -70,7 +77,7 @@ class HeadlineDataset(Dataset):
         max_col = numerical_slice.abs().max().idxmax()
         max_row_index = numerical_slice[max_col].abs().idxmax()
         max_val = numerical_slice.loc[max_row_index, max_col]
-        print(f"The maximum absolute value is {max_val} in column {max_col} for index {headline_date_timestamp} for stock {ticker}")
+        # print(f"The maximum absolute value is {max_val} in column {max_col} for index {headline_date_timestamp} for stock {ticker}")
 
 
         # Convert the cleaned numerical_slice DataFrame to a tensor
@@ -113,7 +120,7 @@ def create_data_loaders(headlines_file, numerical_folder, trading_days_before, t
     val_dataset = Subset(dataset, val_indices)
     test_dataset = Subset(dataset, test_indices)
 
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False)  # Shuffle only for training set
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 

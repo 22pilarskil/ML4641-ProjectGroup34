@@ -20,11 +20,28 @@ def check_gradients_for_nan(model):
     return False  # No NaN gradients were found
 
 
+class RunningAverage:
+
+    def __init__(self):
+        self.total_sum = 0  # To store the sum of all numbers added
+        self.count = 0      # To count the number of elements
+
+    def update(self, number):
+        self.total_sum += number
+        self.count += 1
+
+    def get_average(self):
+        if self.count == 0:
+            return 0  # To avoid division by zero
+        return self.total_sum / self.count
+
+
 def train_model(epoch, model, loader, optimizer, device):
 
     model.train()
     loss_fn = get_loss_function(model)
     total_loss = 0
+    average_loss = RunningAverage()
 
     for batch_num, batch in enumerate(loader):
         optimizer.zero_grad()
@@ -54,12 +71,12 @@ def train_model(epoch, model, loader, optimizer, device):
                 pickle.dump(financial_data, f)
             print(outputs)
             print(torch.max(financial_data), torch.min(financial_data))
-            raise ValueError("NaN gradient detected, stopping training")
+            continue
         else:
+            average_loss.update(loss.item())
             optimizer.step()
 
-        optimizer.step()  # Proceed with optimizer step if no NaN gradients were detected
-        print(f"LOSS: {loss.item()}, batch {batch_num} / {len(loader)}")
+        print(f"LOSS: {loss.item()}, AVERAGE: {average_loss.get_average()}, batch {batch_num} / {len(loader)}")
 
         total_loss += loss.item()
 

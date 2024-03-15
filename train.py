@@ -8,7 +8,7 @@ from run_model import train_model, evaluate_model
 
 def run_training():
 
-    data_folder = "data/NumericalData_pct/"
+    data_folder = "data/NumericalData_processed/"
     headlines_file = "data/cleaned_headlines.pkl"
     pretrained_model_name = 'bert-base-uncased'
     batch_size = 16
