@@ -10,11 +10,13 @@ import pickle
 import csv
 import time
 
-api_key = os.environ.get('ALPHA_API_KEY')
+api_key = 'VYBKNAJE7RMO66IU'
 
-if api_key is None:
-    print('Please set ALPHA_API_KEY environment variable')
-    exit()
+##api_key = os.environ.get('ALPHA_API_KEY')
+##
+##if api_key is None:
+##    print('Please set ALPHA_API_KEY environment variable')
+##    exit()
 
 ##resp = requests.get('http://en.wikipedia.org/wiki/List_of_S%26P_500_companies')
 ##soup = bs.BeautifulSoup(resp.text, 'lxml')
