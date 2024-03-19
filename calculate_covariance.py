@@ -192,15 +192,125 @@ def add_pct_changes(folder, files, target_folder="data/NumericalData_pct"):
         pct_df.fillna(0, inplace=True)
         pd.to_pickle(pct_df, os.path.join(target_folder, file))
 
-def main():
-    save_file = "data/correlations/confusion_matrix.npy"
-    folder = "data/NumericalData"
+def process_data(folder, target_folder="data/NumericalData_processed"):
+    #['Close', 'Volume', 'Market Cap', 'Log Close', 'Log Volume',
+    #   'Log Market Cap', 'Volatility', 'RSI', 'Percent Change', 'SMA_10',
+    #   'SMA_20', 'EMA_12', 'EMA_26', 'MACD', 'Signal_Line']
+    # [Percent Change, Log(Volume+1), Log(Market Cap + 1), Volatility/Close, RSI, (SMA_10 - SMA_20)/SMA_20?, MACD vs Signal Line switches]
     files = os.listdir(folder)
-    add_pct_changes(folder, files)
-    # corrs = correlate_files(folder, files, verbose=True)
-    # np.save(save_file, corrs)
-    # x = np.load(save_file)
-    # print(x)
+    for file in files:
+        path = os.path.join(folder, file)
+        df = pd.read_pickle(path)
+        df = filter_pickle(df)
+        if len(df) < 30:
+            print(f"skipping ticker: {file.split(".")[0]}")
+            continue
+        move_cols_to_end = ['Percent Change', 'Log Volume', 'Log Market Cap', 'RSI']
+        df = df[[c for c in df if c not in move_cols_to_end] + move_cols_to_end]
+        df['Log Market Cap'] = df['Log Market Cap'].fillna(0)
+        df['Volatility/Close'] = df['Volatility']/df['Close']
+        df['SMA_Ratio'] = (df['SMA_10'] - df['SMA_20']) / df['SMA_20']
+        df['SL_MACD'] = (df['Signal_Line'].shift(1) - df['MACD'].shift(1)) + (df['MACD'] - df['Signal_Line'])
+        df = df.iloc[20:, -7:]
+        
+        df.to_pickle(os.path.join(target_folder, file))
+
+def filter_pickle(df: pd.DataFrame):
+    # Remove all dates before 2008 -- we don't have headlines and inflation really messes with data
+    date_index = df.index[df.index > pd.Timestamp(year=2008, month=1, day=1)]
+    if date_index.empty:
+        return date_index
+    date_index = date_index[0]
+    df = df[df.index > date_index]
+
+    # If you have nan close, there's no data for that day period. Remove it and recompute surrounding values
+    indices = df.index[df["Close"].isnull()]
+    df = df.drop(indices)
+    df['SMA_10'] = df['Close'].rolling(window=10).mean()
+    df['SMA_20'] = df['Close'].rolling(window=20).mean()
+
+    # Now remove everything that occurs after a close drops below $0.01 -- too volatile to be reliable data
+    ind = df[df['Close'] < 0.01].head(1)
+    if ind.empty:
+        return df
+    iind = df.index.get_loc(ind.index[0])
+    df = df.iloc[:iind]
+    
+    return df
+
+def count_number_nans(folder, columns):
+    files = os.listdir(folder)
+    for file in files:
+        path = os.path.join(folder, file)
+        ticker = file.split(".")[0]
+        df = pd.read_pickle(path)
+        if len(columns) == 0:
+            num_na = df.isnull().sum().sum()
+            if num_na > 0:
+                print(f"ticker {ticker}, num_nan:\n{df.isnull().sum()}")
+        for col in columns:
+            num_nulls = df[col].isnull().sum()
+            if num_nulls > 0:
+                print(f"ticker {ticker}, num_nan_{col}: {num_nulls}")
+                # filter_pickle(df)
+
+def find_unconnected_tickers():
+    folder = "data/NumericalData_processed"
+    files = os.listdir(folder)
+    headlines = "data/cleaned_headlines.pkl"
+    tickers = [a.split(".")[0] for a in files]
+    df = pd.read_pickle(headlines)
+    headline_tickers = df["stock"].unique()
+    all = []
+    for headline_ticker in headline_tickers:
+        if headline_ticker not in tickers:
+            all.append(headline_ticker)
+    print(len(all))
+    return all
+
+def move_pkl_files():
+    folder_src = "Numerical_Data"
+    folder_tgt = "data/NumericalData_raw"
+    files_src = os.listdir(folder_src)
+    files_tgt = os.listdir(folder_tgt)
+    for file in files_src:
+        print("transferring " + file)
+        df = pd.read_pickle(os.path.join(folder_src, file))
+        pd.to_pickle(df, os.path.join(folder_tgt, file))
+
+def find_maxes(folder): 
+    total_maxes = None
+    for file in os.listdir(folder):
+        path = os.path.join(folder, file)
+        df = pd.read_pickle(path)
+        if total_maxes is None:
+            total_maxes = df.max(axis=0)
+        else:
+            temp_maxes = df.max(axis=0)
+            # if temp_maxes.ge(6e5).any():
+                # print(file)
+            if temp_maxes.iloc[0] > 5e5:
+                print(file)
+                continue
+            total_maxes = pd.concat([temp_maxes, total_maxes], axis=1).max(axis=1)
+        
+    
+    print(total_maxes)
+    return total_maxes
+        
+def main():
+    # folder = "data/NumericalData_raw"
+    # process_data(folder)
+    folder = "data/NumericalData_processed"
+    # find_maxes(folder)
+
+    df = pd.read_pickle(os.path.join(folder, "ITC.pkl"))
+    print(df.columns)
+    # ind = df[df["Percent Change"] > 5e5].index
+    # print(ind)
+    # df = df.iloc[1363:1380]
+    # print(df[["Close", "Percent Change", "Volume"]])
+
 
 if __name__ == "__main__":
     main()

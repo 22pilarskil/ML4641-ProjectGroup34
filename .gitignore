@@ -3,3 +3,6 @@ __pycache__/
 pickled/
 data/cleaned_headlines.pkl
 data/NumericalData_pct/*
+data/NumericalData_old/*
+data/NumericalData_processed/*
+data/NumericalData_raw/*
