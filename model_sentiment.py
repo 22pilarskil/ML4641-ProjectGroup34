@@ -15,12 +15,15 @@ class BertForSentimentAnalysis(nn.Module):
             TransformerEncoderLayer(d_model=num_financial_metrics, nhead=1, batch_first=True, dim_feedforward=hidden_dim),
             num_layers=2
         )
+        
+        if self.is_regression:
+            # The output layer's dimensions depend on whether the model is for regression or classification
+            output_dim = 1
+            self.output_layer = nn.Linear(768 + num_financial_metrics, output_dim)
 
-        # The output layer's dimensions depend on whether the model is for regression or classification
-        output_dim = 1 if is_regression else num_labels
-        self.output_layer = nn.Linear(768 + num_financial_metrics, output_dim)
-
-        self.dropout = nn.Dropout(0.1)
+            self.dropout = nn.Dropout(0.1)
+        else:
+            self.classifier = nn.Linear(768 + num_financial_metrics, num_labels)
 
     def forward(self, input_ids, attention_mask, financial_data):
         # Process text data through BERT
@@ -28,19 +31,31 @@ class BertForSentimentAnalysis(nn.Module):
         if torch.isnan(financial_data).any():
             raise ValueError("NaN detected in financial data input")
 
+        if self.is_regression:
+            bert_outputs = self.bert(input_ids=input_ids, attention_mask=attention_mask)
+            cls_output = bert_outputs.last_hidden_state[:, 0, :]  # Shape: (batch_size, 768)
 
-        bert_outputs = self.bert(input_ids=input_ids, attention_mask=attention_mask)
-        cls_output = bert_outputs.last_hidden_state[:, 0, :]  # Shape: (batch_size, 768)
+            # Process financial data through Transformer
+            financial_outputs = self.financial_transformer(financial_data.float())  # Shape: (batch_size, seq_length, num_financial_metrics)
+            cls_financial_output = financial_outputs[:, 0, :]  # Take the first output
 
-        # Process financial data through Transformer
-        financial_outputs = self.financial_transformer(financial_data.float())  # Shape: (batch_size, seq_length, num_financial_metrics)
-        cls_financial_output = financial_outputs[:, 0, :]  # Take the first output
+            combined_output = torch.cat((cls_output, cls_financial_output), dim=1)
+            combined_output = self.dropout(combined_output)
 
-        combined_output = torch.cat((cls_output, cls_financial_output), dim=1)
-        combined_output = self.dropout(combined_output)
+            # Apply the output layer
+            output = self.output_layer(combined_output)
 
-        # Apply the output layer
-        output = self.output_layer(combined_output)
-
-        return output
+            return output
+        else:
+            bert_outputs = self.bert(input_ids=input_ids, attention_mask=attention_mask)
+            cls_output = bert_outputs.last_hidden_state[:, 0, :]
+            
+            financial_outputs = self.financial_transformer(financial_data.float())
+            cls_financial_output = financial_outputs[:, 0, :]
+            
+            combined_output = torch.cat((cls_output, cls_financial_output), dim=1)
+            
+            logits = self.classifier(combined_output)
+                
+            return logits
 

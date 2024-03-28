@@ -12,9 +12,10 @@ def run_training():
     headlines_file = "data/cleaned_headlines.pkl"
     pretrained_model_name = 'bert-base-uncased'
     batch_size = 16
-    is_regression = True  # Adjust based on your task
+    is_regression = False  # Adjust based on your task
 
-    train_loader, val_loader, test_loader = create_data_loaders(headlines_file, data_folder, trading_days_before=10, trading_days_after=-1, batch_size=batch_size)
+    train_loader, val_loader, test_loader = create_data_loaders(headlines_file, data_folder, trading_days_before=10, 
+                                                                trading_days_after=-1, batch_size=batch_size, is_regression=is_regression)
 
     model = BertForSentimentAnalysis(pretrained_model_name=pretrained_model_name, is_regression=is_regression)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -33,7 +34,7 @@ def run_training():
     if is_regression:
         header.extend(["train_rmse", "train_r2", "val_rmse", "val_r2"])
     else:
-        header.extend(["train_accuracy", "train_f1", "val_accuracy", "val_f1"])
+        header.extend(["train_accuracy", "val_accuracy"])
     
     with open(results_file, 'w', newline='') as file:
         writer = csv.writer(file)
@@ -53,7 +54,7 @@ def run_training():
         if is_regression:
             row.extend([train_metrics['rmse'], train_metrics['r2'], val_metrics['rmse'], val_metrics['r2']])
         else:
-            row.extend([train_metrics['accuracy'], train_metrics['f1_score'], val_metrics['accuracy'], val_metrics['f1_score']])
+            row.extend([train_metrics['accuracy'], val_metrics['accuracy']])
         
         with open(results_file, 'a+', newline='') as file:
             writer = csv.writer(file)

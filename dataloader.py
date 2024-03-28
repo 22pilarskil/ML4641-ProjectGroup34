@@ -19,11 +19,12 @@ torch.manual_seed(seed)
 
 class HeadlineDataset(Dataset):
 
-    def __init__(self, headlines_file, numerical_folder, trading_days_before, trading_days_after):
+    def __init__(self, headlines_file, numerical_folder, trading_days_before, trading_days_after, is_regression=True):
         self.numerical_folder = numerical_folder
         self.headlines_file = headlines_file
         self.trading_days_before = trading_days_before
         self.trading_days_after = trading_days_after
+        self.is_regression = is_regression
         df = pd.read_pickle(headlines_file)
         self.data = df.sample(frac=1, random_state=1).reset_index(drop=True)
         self.max_len = 256
@@ -95,17 +96,36 @@ class HeadlineDataset(Dataset):
             return_tensors='pt',
         )
 
-        return {
-            'input_ids': inputs['input_ids'].flatten(),
-            'attention_mask': inputs['attention_mask'].flatten(),
-            'numerical': numerical_tensor,
-            'labels': torch.tensor(headline_info['percent change'], dtype=torch.float)
-        }
+        percentage_change = headline_info['percent change']
+
+        if self.is_regression:
+            return {
+                'input_ids': inputs['input_ids'].flatten(),
+                'attention_mask': inputs['attention_mask'].flatten(),
+                'numerical': numerical_tensor,
+                'labels': torch.tensor(percentage_change, dtype=torch.float)
+            }
+        else:
+            # Create label classes
+            if percentage_change > 0.5:
+                label = 0 # Increase
+            elif percentage_change < -0.5: 
+                label = 1 # Decrease
+            else:
+                label = 2 # No change
+
+            return {
+                'input_ids': inputs['input_ids'].flatten(),
+                'attention_mask': inputs['attention_mask'].flatten(),
+                'numerical': numerical_tensor,
+                'labels': torch.tensor(label, dtype=torch.long)
+            }
 
 
-def create_data_loaders(headlines_file, numerical_folder, trading_days_before, trading_days_after, batch_size=32):
+def create_data_loaders(headlines_file, numerical_folder, trading_days_before, trading_days_after, batch_size=32, is_regression=True):
 
-    dataset = HeadlineDataset(headlines_file=headlines_file, numerical_folder=numerical_folder, trading_days_before=trading_days_before, trading_days_after=trading_days_after)
+    dataset = HeadlineDataset(headlines_file=headlines_file, numerical_folder=numerical_folder, 
+                                trading_days_before=trading_days_before, trading_days_after=trading_days_after, is_regression=is_regression)
     total_size = len(dataset)
     train_size = int(0.8 * total_size)
     val_size = int(0.1 * total_size)

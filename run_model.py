@@ -45,15 +45,12 @@ def train_model(epoch, model, loader, optimizer, device):
 
     for batch_num, batch in enumerate(loader):
         optimizer.zero_grad()
+
         input_ids = batch['input_ids'].to(device)
         attention_mask = batch['attention_mask'].to(device)
         financial_data = batch['numerical'].to(device)
 
         labels = batch['labels'].to(device)
-
-        # Handle regression and classification label format
-        if not model.is_regression:
-            labels = labels.long()  # Ensure labels are long type for classification
 
         outputs = model(input_ids=input_ids, attention_mask=attention_mask, financial_data=financial_data)
 
@@ -85,45 +82,35 @@ def train_model(epoch, model, loader, optimizer, device):
 
 def evaluate_model(model, loader, device):
     model.eval()
-    loss_fn = get_loss_function(model)
-    total_loss = 0
-    all_predictions = []
-    all_true_labels = []
 
-    with torch.no_grad():
-        for batch_num, batch in enumerate(loader):
-            
-            input_ids = batch['input_ids'].to(device)
-            attention_mask = batch['attention_mask'].to(device)
-            financial_data = batch['numerical'].to(device)    
-            labels = batch['labels'].to(device)
+    if model.is_regression:
+        loss_fn = get_loss_function(model)
+        total_loss = 0
+        all_predictions = []
+        all_true_labels = []
 
-            # Handle regression and classification label format
-            if not model.is_regression:
-                labels = labels.long()
+        with torch.no_grad():
+            for batch_num, batch in enumerate(loader):
+                
+                input_ids = batch['input_ids'].to(device)
+                attention_mask = batch['attention_mask'].to(device)
+                financial_data = batch['numerical'].to(device)    
+                labels = batch['labels'].to(device)
 
-            outputs = model(input_ids=input_ids, attention_mask=attention_mask, financial_data=financial_data)
-            
-            # For regression, ensure the outputs and labels have the same dimensions
-            if model.is_regression:
+                outputs = model(input_ids=input_ids, attention_mask=attention_mask, financial_data=financial_data)
+                
                 outputs = outputs.squeeze(-1)
                 labels = labels.float()
 
-            loss = loss_fn(outputs, labels)
-            total_loss += loss.item()
+                loss = loss_fn(outputs, labels)
+                total_loss += loss.item()
 
-            if model.is_regression:
                 all_predictions.extend(outputs.cpu().numpy())
                 all_true_labels.extend(labels.cpu().numpy())
-            else:
-                _, predicted_labels = torch.max(outputs, 1)
-                all_predictions.extend(predicted_labels.cpu().numpy())
-                all_true_labels.extend(labels.cpu().numpy())
 
-    metrics = {}
-    metrics['loss'] = total_loss / len(loader)
-    
-    if model.is_regression:
+        metrics = {}
+        metrics['loss'] = total_loss / len(loader)
+        
         mse = mean_squared_error(all_true_labels, all_predictions)
         rmse = np.sqrt(mse)
         r2 = r2_score(all_true_labels, all_predictions)
@@ -131,10 +118,23 @@ def evaluate_model(model, loader, device):
         metrics['r2'] = r2
         print(f"Loss: {metrics['loss']}, RMSE: {rmse}, R^2: {r2}")
     else:
-        accuracy = accuracy_score(all_true_labels, all_predictions)
-        f1 = f1_score(all_true_labels, all_predictions, average='weighted')
-        metrics['accuracy'] = accuracy
-        metrics['f1_score'] = f1
-        print(f"Loss: {metrics['loss']}, Accuracy: {accuracy}, F1 Score: {f1}")
+        metrics = {}
 
+        num_correct = 0
+        num_samples = 0
+
+        with torch.no_grad():
+            for batch in dataloader:
+                input_ids = batch['input_ids'].to(device)
+                attention_mask = batch['attention_mask'].to(device)
+                financial_data = batch['numerical'].to(device)    
+                labels = batch['labels'].to(device)
+
+                logits = model(input_ids, attention_mask)
+                _, preds = torch.max(logits, 1)
+                num_correct += (preds == labels).sum()
+                num_samples += preds.size(0)
+        
+        metrics['accuracy'] = num_correct / num_samples
+        
     return metrics
