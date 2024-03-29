@@ -29,19 +29,24 @@ def run_training():
     weights_dir = os.path.join(results_dir, "weights")
     os.makedirs(weights_dir, exist_ok=True)
     results_file = os.path.join(results_dir, "epoch_results.csv")
+    iterations_file = os.path.join(results_dir, "iteration_results.csv")
 
     header = ["epoch", "train_loss", "val_loss"]
     if is_regression:
         header.extend(["train_rmse", "train_r2", "val_rmse", "val_r2"])
     else:
-        header.extend(["train_accuracy", "val_accuracy"])
+        header.extend(["train_accuracy", "train_precision", "train_recall", "train_f1", "val_accuracy", "val_precision", "val_recall", "val_f1"])
     
     with open(results_file, 'w', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(header)
 
+    with open(results_file, 'w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(['epoch', 'batch_num', 'loss', 'avg_loss', 'accuracy', 'precision', 'recall', 'f1'])
+
     for epoch in range(epochs):
-        train_model(epoch, model, train_loader, optimizer, device)
+        train_model(epoch, model, train_loader, val_loader, optimizer, device, iterations_file)
         
         train_metrics = evaluate_model(model, train_loader, device)
         val_metrics = evaluate_model(model, val_loader, device)
@@ -54,7 +59,8 @@ def run_training():
         if is_regression:
             row.extend([train_metrics['rmse'], train_metrics['r2'], val_metrics['rmse'], val_metrics['r2']])
         else:
-            row.extend([train_metrics['accuracy'], val_metrics['accuracy']])
+            row.extend([train_metrics['accuracy'], train_metrics['precision'], train_metrics['recall'], train_metrics['f1'], 
+                        val_metrics['accuracy'], val_metrics['precision'], val_metrics['recall'], val_metrics['f1']])
         
         with open(results_file, 'a+', newline='') as file:
             writer = csv.writer(file)

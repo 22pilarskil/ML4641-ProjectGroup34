@@ -3,6 +3,7 @@ from torch import nn
 from sklearn.metrics import mean_squared_error, r2_score, precision_score, recall_score, f1_score
 import numpy as np
 import pickle
+import csv
 
 def get_loss_function(model):
     if model.is_regression:
@@ -36,14 +37,14 @@ class RunningAverage:
         return self.total_sum / self.count
 
 
-def train_model(epoch, model, loader, optimizer, device):
+def train_model(epoch, model, train_loader, val_loader, optimizer, device, iteration_results_file):
 
     model.train()
     loss_fn = get_loss_function(model)
     total_loss = 0
     average_loss = RunningAverage()
 
-    for batch_num, batch in enumerate(loader):
+    for batch_num, batch in enumerate(train_loader):
         optimizer.zero_grad()
 
         input_ids = batch['input_ids'].to(device)
@@ -73,11 +74,20 @@ def train_model(epoch, model, loader, optimizer, device):
             average_loss.update(loss.item())
             optimizer.step()
 
-        print(f"LOSS: {loss.item()}, AVERAGE: {average_loss.get_average()}, batch {batch_num} / {len(loader)}")
+        print(f"LOSS: {loss.item()}, AVERAGE: {average_loss.get_average()}, batch {batch_num} / {len(train_loader)}")
 
         total_loss += loss.item()
 
-    print(f"Epoch {epoch}, Loss: {total_loss / len(loader)}")
+        if batch_num % 625 == 0:
+            metrics = evaluate_model(model, val_loader, device)
+
+            with open(iteration_results_file, 'a+', newline='') as file:
+                writer = csv.writer(file)
+                writer.writerow([epoch, batch_num, 
+                                 loss.item(), average_loss.get_average(),
+                                 metrics['accuracy'], metrics['precision'], metrics['recall'], metrics['f1']])
+
+    print(f"Epoch {epoch}, Loss: {total_loss / len(train_loader)}")
 
 
 def evaluate_model(model, loader, device):
