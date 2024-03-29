@@ -41,7 +41,7 @@ def run_training():
         writer = csv.writer(file)
         writer.writerow(header)
 
-    with open(results_file, 'w', newline='') as file:
+    with open(iterations_file, 'w', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(['epoch', 'batch_num', 'loss', 'avg_loss', 'accuracy', 'precision', 'recall', 'f1'])
 
