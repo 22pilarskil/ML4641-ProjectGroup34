@@ -41,7 +41,7 @@ class HeadlineDataset(Dataset):
     def get_item(self, idx, excludes=[]):
 
         headline_info = self.data.iloc[idx]
-        ticker = headline_info['stock']
+        ticker = headline_info['ticker']
 
         headline_date_timestamp = parser.parse(headline_info['date'])
         headline_date_timestamp = headline_date_timestamp.replace(tzinfo=None)
@@ -85,7 +85,7 @@ class HeadlineDataset(Dataset):
         numerical_tensor = torch.tensor(numerical_slice.values, dtype=torch.float)
 
         inputs = self.tokenizer.encode_plus(
-            headline_info['title'],
+            headline_info['headline'],
             None,
             add_special_tokens=True,
             max_length=self.max_len,

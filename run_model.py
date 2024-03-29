@@ -136,13 +136,13 @@ def evaluate_model(model, loader, device):
         all_labels = []
 
         with torch.no_grad():
-            for batch in dataloader:
+            for batch in loader:
                 input_ids = batch['input_ids'].to(device)
                 attention_mask = batch['attention_mask'].to(device)
                 financial_data = batch['numerical'].to(device)    
                 labels = batch['labels'].to(device)
 
-                logits = model(input_ids, attention_mask)
+                logits = model(input_ids, attention_mask, financial_data)
                 _, preds = torch.max(logits, 1)
                 num_correct += (preds == labels).sum()
                 num_samples += preds.size(0)
