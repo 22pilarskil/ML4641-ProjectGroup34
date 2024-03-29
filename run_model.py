@@ -1,6 +1,6 @@
 import torch
 from torch import nn
-from sklearn.metrics import mean_squared_error, r2_score, f1_score, accuracy_score
+from sklearn.metrics import mean_squared_error, r2_score, precision_score, recall_score, f1_score
 import numpy as np
 import pickle
 
@@ -122,6 +122,8 @@ def evaluate_model(model, loader, device):
 
         num_correct = 0
         num_samples = 0
+        all_preds = []
+        all_labels = []
 
         with torch.no_grad():
             for batch in dataloader:
@@ -134,7 +136,13 @@ def evaluate_model(model, loader, device):
                 _, preds = torch.max(logits, 1)
                 num_correct += (preds == labels).sum()
                 num_samples += preds.size(0)
+
+                all_preds.extend(preds.cpu().numpy())
+                all_labels.extend(labels.cpu().numpy())
         
         metrics['accuracy'] = num_correct / num_samples
-        
+        metrics['precision'] = precision_score(all_labels, all_preds, average='weighted')
+        metrics['recall'] = recall_score(all_labels, all_preds, average='weighted')
+        metrics['f1'] = f1_score(all_labels, all_preds, average='weighted')
+
     return metrics
