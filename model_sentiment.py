@@ -4,7 +4,7 @@ from transformers import BertModel
 from torch.nn import TransformerEncoder, TransformerEncoderLayer
 
 class BertForSentimentAnalysis(nn.Module):
-    def __init__(self, pretrained_model_name='bert-base-uncased', num_labels=3, num_financial_metrics=7, seq_length=10, hidden_dim=11, is_regression=True):
+    def __init__(self, pretrained_model_name='bert-base-uncased', num_labels=3, num_financial_metrics=6, seq_length=10, hidden_dim=11, is_regression=True):
         super(BertForSentimentAnalysis, self).__init__()
         
         self.bert = BertModel.from_pretrained(pretrained_model_name)
@@ -23,7 +23,8 @@ class BertForSentimentAnalysis(nn.Module):
 
             self.dropout = nn.Dropout(0.1)
         else:
-            self.classifier = nn.Linear(768 + num_financial_metrics, num_labels)
+            self.bert_reducer = nn.Linear(768, num_financial_metrics)
+            self.classifier = nn.Linear(2 * num_financial_metrics, num_labels)
 
     def forward(self, input_ids, attention_mask, financial_data):
         # Process text data through BERT
@@ -53,7 +54,8 @@ class BertForSentimentAnalysis(nn.Module):
             financial_outputs = self.financial_transformer(financial_data.float())
             cls_financial_output = financial_outputs[:, 0, :]
             
-            combined_output = torch.cat((cls_output, cls_financial_output), dim=1)
+            condensed_financials = self.bert_reducer(cls_output)
+            combined_output = torch.cat((condensed_financials, cls_financial_output), dim=1)
             
             logits = self.classifier(combined_output)
                 

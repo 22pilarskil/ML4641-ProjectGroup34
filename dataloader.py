@@ -25,7 +25,7 @@ class HeadlineDataset(Dataset):
         self.trading_days_before = trading_days_before
         self.trading_days_after = trading_days_after
         self.is_regression = is_regression
-        df = pd.read_pickle(headlines_file)
+        df = pd.read_csv(headlines_file)
         self.data = df.sample(frac=1, random_state=1).reset_index(drop=True)
         self.max_len = 256
         self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
@@ -38,7 +38,7 @@ class HeadlineDataset(Dataset):
             raise IndexError("Index out of bounds")
         return self.get_item(idx)
 
-    def get_item(self, idx, excludes=[]):
+    def get_item(self, idx, excludes=["Log Market Cap"]):
 
         headline_info = self.data.iloc[idx]
         ticker = headline_info['ticker']
@@ -65,7 +65,6 @@ class HeadlineDataset(Dataset):
 
         slice_indices = slice(index-self.trading_days_before, index+self.trading_days_after)
         numerical_slice = numerical_df.iloc[slice_indices]
-
         numerical_slice = numerical_slice.drop(columns=excludes, errors='ignore')
 
         # Identify columns with nan values before converting to a tensor
@@ -107,9 +106,9 @@ class HeadlineDataset(Dataset):
             }
         else:
             # Create label classes
-            if percentage_change > 0.5:
+            if percentage_change > 0.005:
                 label = 0 # Increase
-            elif percentage_change < -0.5: 
+            elif percentage_change < -0.005: 
                 label = 1 # Decrease
             else:
                 label = 2 # No change

@@ -1,19 +1,19 @@
 import torch
 from torch import nn
-from sklearn.metrics import mean_squared_error, r2_score, precision_score, recall_score, f1_score
+from sklearn.metrics import mean_squared_error, r2_score, f1_score, precision_score, recall_score
 import numpy as np
 import pickle
 import csv
 
 def get_loss_function(model):
-    if model.is_regression:
+    if model.module.is_regression:
         return nn.MSELoss()
     else:
         return nn.CrossEntropyLoss()
 
 
 def check_gradients_for_nan(model):
-    for name, parameter in model.named_parameters():
+    for name, parameter in model.module.named_parameters():
         if parameter.grad is not None:  # Parameters might not have gradients if they are not trainable or didn't participate in the forward pass
             if torch.isnan(parameter.grad).any():
                 print(f"NaN gradient found in {name}")
@@ -39,6 +39,7 @@ class RunningAverage:
 
 def train_model(epoch, model, train_loader, val_loader, optimizer, device, iteration_results_file):
 
+    print("TRAINING")
     model.train()
     loss_fn = get_loss_function(model)
     total_loss = 0
@@ -54,9 +55,9 @@ def train_model(epoch, model, train_loader, val_loader, optimizer, device, itera
         labels = batch['labels'].to(device)
 
         outputs = model(input_ids=input_ids, attention_mask=attention_mask, financial_data=financial_data)
-
+        _, preds = torch.max(outputs, 1)
         # For regression, ensure the outputs and labels have the same dimensions
-        if model.is_regression:
+        if model.module.is_regression:
             outputs = outputs.squeeze(-1)
             labels = labels.float()  # Ensure labels are float type for regression
 
@@ -74,27 +75,20 @@ def train_model(epoch, model, train_loader, val_loader, optimizer, device, itera
             average_loss.update(loss.item())
             optimizer.step()
 
-        print(f"LOSS: {loss.item()}, AVERAGE: {average_loss.get_average()}, batch {batch_num} / {len(train_loader)}")
+        print(f"LOSS: {loss.item()}, AVERAGE: {average_loss.get_average()}, batch {batch_num} / {len(train_loader)}, \npreds: {preds}")
 
         total_loss += loss.item()
-
-        if batch_num % 625 == 0:
-            metrics = evaluate_model(model, val_loader, device)
-
-            with open(iteration_results_file, 'a+', newline='') as file:
-                writer = csv.writer(file)
-                writer.writerow([epoch, batch_num, 
-                                 loss.item(), average_loss.get_average(),
-                                 metrics['accuracy'], metrics['precision'], metrics['recall'], metrics['f1']])
 
     print(f"Epoch {epoch}, Loss: {total_loss / len(train_loader)}")
 
 
 def evaluate_model(model, loader, device):
+
+    print("EVALUATING")
     model.eval()
 
-    if model.is_regression:
-        loss_fn = get_loss_function(model)
+    loss_fn = get_loss_function(model)
+    if model.module.is_regression:
         total_loss = 0
         all_predictions = []
         all_true_labels = []
@@ -117,6 +111,7 @@ def evaluate_model(model, loader, device):
 
                 all_predictions.extend(outputs.cpu().numpy())
                 all_true_labels.extend(labels.cpu().numpy())
+                print("BATCH {batch_num} / {len(loader)}")
 
         metrics = {}
         metrics['loss'] = total_loss / len(loader)
@@ -132,27 +127,35 @@ def evaluate_model(model, loader, device):
 
         num_correct = 0
         num_samples = 0
+        total_loss = 0
         all_preds = []
         all_labels = []
 
         with torch.no_grad():
-            for batch in loader:
+            for batch_num, batch in enumerate(loader):
+
                 input_ids = batch['input_ids'].to(device)
                 attention_mask = batch['attention_mask'].to(device)
                 financial_data = batch['numerical'].to(device)    
                 labels = batch['labels'].to(device)
 
                 logits = model(input_ids, attention_mask, financial_data)
+                loss = loss_fn(logits, labels)  # Compute the loss
+                total_loss += loss.item()
+
                 _, preds = torch.max(logits, 1)
-                num_correct += (preds == labels).sum()
+                num_correct += (preds == labels).sum().item()
                 num_samples += preds.size(0)
 
                 all_preds.extend(preds.cpu().numpy())
                 all_labels.extend(labels.cpu().numpy())
-        
+                print(f"BATCH {batch_num} / {len(loader)} \npreds: {preds}")
+
         metrics['accuracy'] = num_correct / num_samples
+        metrics['f1'] = f1_score(all_labels, all_preds, average='weighted')
+        metrics['loss'] = total_loss / len(loader)
         metrics['precision'] = precision_score(all_labels, all_preds, average='weighted')
         metrics['recall'] = recall_score(all_labels, all_preds, average='weighted')
-        metrics['f1'] = f1_score(all_labels, all_preds, average='weighted')
+
 
     return metrics
