@@ -1,3 +1,5 @@
-training_results/
+**/training_results*/
 data/
+*.png
+*.pkl
 __pycache__/
