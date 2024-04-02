@@ -1,0 +1,207 @@
+<html>
+   <head>
+      <meta content="text/html; charset=UTF-8" http-equiv="content-type">
+      <style type="text/css">ol{margin:0;padding:0}table td,table th{padding:0}.c7{border-right-style:solid;padding:5pt 5pt 5pt 5pt;border-bottom-color:#000000;border-top-width:1pt;border-right-width:1pt;border-left-color:#000000;vertical-align:top;border-right-color:#000000;border-left-width:1pt;border-top-style:solid;border-left-style:solid;border-bottom-width:1pt;width:234pt;border-top-color:#000000;border-bottom-style:solid}.c4{color:#434343;font-weight:400;text-decoration:none;vertical-align:baseline;font-size:14pt;font-family:"Arial";font-style:normal}.c9{padding-top:16pt;padding-bottom:4pt;line-height:1.15;page-break-after:avoid;orphans:2;widows:2;text-align:left}.c3{padding-top:0pt;padding-bottom:0pt;line-height:1.15;orphans:2;widows:2;text-align:left;height:11pt}.c0{color:#000000;font-weight:400;text-decoration:none;vertical-align:baseline;font-size:11pt;font-family:"Arial";font-style:normal}.c1{color:#000000;font-weight:700;text-decoration:none;vertical-align:baseline;font-size:11pt;font-family:"Arial";font-style:normal}.c11{margin-left:36pt;padding-top:0pt;text-indent:-36pt;padding-bottom:0pt;line-height:2.0;text-align:left}.c5{padding-top:0pt;padding-bottom:0pt;line-height:1.15;orphans:2;widows:2;text-align:left}.c10{padding-top:0pt;padding-bottom:0pt;line-height:1.15;text-align:center}.c13{margin-left:auto;border-spacing:0;border-collapse:collapse;margin-right:auto}.c16{padding-top:0pt;padding-bottom:0pt;line-height:1.15;text-align:left}.c2{padding-top:0pt;padding-bottom:0pt;line-height:1.0;text-align:left}.c15{background-color:#ffffff;max-width:468pt;padding:72pt 72pt 72pt 72pt}.c14{color:inherit;text-decoration:inherit}.c8{height:0pt}.c12{height:11pt}.c6{text-indent:36pt}.title{padding-top:0pt;color:#000000;font-size:26pt;padding-bottom:3pt;font-family:"Arial";line-height:1.15;page-break-after:avoid;orphans:2;widows:2;text-align:left}.subtitle{padding-top:0pt;color:#666666;font-size:15pt;padding-bottom:16pt;font-family:"Arial";line-height:1.15;page-break-after:avoid;orphans:2;widows:2;text-align:left}li{color:#000000;font-size:11pt;font-family:"Arial"}p{margin:0;color:#000000;font-size:11pt;font-family:"Arial"}h1{padding-top:20pt;color:#000000;font-size:20pt;padding-bottom:6pt;font-family:"Arial";line-height:1.15;page-break-after:avoid;orphans:2;widows:2;text-align:left}h2{padding-top:18pt;color:#000000;font-size:16pt;padding-bottom:6pt;font-family:"Arial";line-height:1.15;page-break-after:avoid;orphans:2;widows:2;text-align:left}h3{padding-top:16pt;color:#434343;font-size:14pt;padding-bottom:4pt;font-family:"Arial";line-height:1.15;page-break-after:avoid;orphans:2;widows:2;text-align:left}h4{padding-top:14pt;color:#666666;font-size:12pt;padding-bottom:4pt;font-family:"Arial";line-height:1.15;page-break-after:avoid;orphans:2;widows:2;text-align:left}h5{padding-top:12pt;color:#666666;font-size:11pt;padding-bottom:4pt;font-family:"Arial";line-height:1.15;page-break-after:avoid;orphans:2;widows:2;text-align:left}h6{padding-top:12pt;color:#666666;font-size:11pt;padding-bottom:4pt;font-family:"Arial";line-height:1.15;page-break-after:avoid;font-style:italic;orphans:2;widows:2;text-align:left}</style>
+   </head>
+   <body class="c15 doc-content">
+      <h3 class="c9" id="h.643j41fwda9j"><span class="c4">Introduction</span></h3>
+      <p class="c5"><span class="c0">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The stock market has long been analyzed in the attempt to gain an upper hand in the investing world. The earliest works in this field used LSTMs, models specializing in handling sequential data, to predict stock prices based on historical stock data (Vohra &amp; Savaridassan). More advanced models recently have adapted, accounting for sentiment of corresponding news headlines in their predictions (Paul &amp; Vishnoi). We will attempt to do the same using Miguel Aenlle&rsquo;s stock headline dataset. </span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c5"><span class="c0">https://www.kaggle.com/datasets/miguelaenlle/massive-stock-news-analysis-db-for-nlpbacktests?resource=download</span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c5"><span class="c0">This dataset consists of 1.4 million entries, each composed of a headline, the stock ticker associated with the headline, and the date it was published. Pricing information is not immediately available, but can be obtained using Yahoo Finance&rsquo;s API. </span></p>
+      <h3 class="c9" id="h.x27mnpvpilo9"><span class="c4">Problem</span></h3>
+      <p class="c5 c6"><span class="c0">Our project aims to overcome limitations in existing models that struggle with the short-term volatility and randomness of stock prices. Current LSTM and RNN architectures which solely rely on historical stock data generalize poorly to unseen data due to the random walk nature of stock price changes (Selvin et. al). Market sentiment approaches often oversimplify by reducing complex headline data to a single sentiment score while ignoring market trends (Deveikyte et. al). Our approach will differ by integrating these two strategies into one, with financial metrics inputted along with textual data to provide a more robust and complete picture of the financial landscape in an attempt to balance the shortcomings of using each in isolation. &nbsp;</span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <h3 class="c9" id="h.85mr3i5a4toa"><span class="c4">Methods</span></h3>
+      <p class="c5"><span class="c0">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Our data preprocessing has gone through several stages. We split the data preprocessing aspect of the project into two major tasks: preprocessing news headline data and then preprocessing financial metrics that correspond to these news headlines. </span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c5 c6"><span class="c0">For the former task of gathering news headlines, we initially decided to use Miguel Aenlle&rsquo;s stock headline dataset with nearly 1.4 million entries. However, after some preprocessing, we quickly found that the dataset had many entries where the relationship between the headline and the stock ticker were not immediately obvious. For example, a generic headline like &ldquo;Stocks That Hit 52-Week Highs On Friday&rdquo; was mapped to stock ticker &ldquo;A&rdquo; even though this headline did not explicitly mention the company Agilent (A). Due to the fact that we wanted to use headlines that explicitly mentioned tickers to more clearly identify the headline&rsquo;s effect on the stock price, we decided to move forward with a different dataset if possible. Since we could not find any more publically available datasets, we decided to create our own. We first tried to scrape headlines off of financial news websites using Selenium, but we were quickly hindered by web automation blocking on these news sites. Instead of this approach, we came across an API by the name of Alpha Vantage which we were fortunate to receive educational access to. This API provides several endpoints to gather financial data for stocks, but the main one that we used was a news endpoint that returns a list of news headline data for a provided ticker. We then made a script that repeatedly calls the API and gathers headlines for each ticker in our ticker list. This script mostly worked, although we ran into a few minor issues that we had to fix. One of the issues was that the API sometimes would not return information for certain years for some tickers. To resolve this issue, we made the script query other years of data for the ticker if the year that we wanted failed. We then found that sometimes Alpha Vantage would return headlines with the same problem that we had before where the headlines would not directly mention the company that we queried. To resolve this issue, we implemented a custom filtering scheme where we would only select headlines that explicitly mentioned the company&rsquo;s full name or ticker. Using this script, we were able to successfully generate a dataset containing approximately 175,000 headlines. </span></p>
+      <p class="c3 c6"><span class="c0"></span></p>
+      <p class="c5 c6"><span>After gathering the headlines, or next task was gathering all of the financial data for each ticker that we could easily index using the headline&rsquo;s date. We decided to gather as much financial data as possible starting from each ticker&rsquo;s IPO date. We compiled approximately 4000 tickers of data from </span><span>yfinance</span><span class="c0">&nbsp;as our raw data and used that as a basis for further filtering to reduce inconsistency issues that may result in using a free API. Originally we calculated various basic financial metrics based on the daily information: Close, Volume, Market Cap, Log Close, Log Volume, Log Market Cap, Volatility, RSI, Percent Change, SMA 10, SMA 20, EMA 12, EMA 26, MACD, and Signal Line. Our targets for the model were the surrounding changes in percent change of a headline &ndash; for example, if a headline pertaining to ticker A came out on August 12th, and the previous trading day was August 10th and the next trading day was August 13th, we would take the percent change from August 13th minus the percent change from August 10th as our target. This is what we want the model to predict: the percent change resulting from the headline.</span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c5"><span class="c0">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;This initial processing, our NumericalData_old, had two main problems. For one, there were repetitions of information, some examples being that Volume and Log Volume conveyed the same information and that MACD was a derivative of EMA 12 and EMA 26. Secondly, these metrics were unchecked: closes would drop to 0 and then increase again, resulting in an infinite percent change. Market caps were sometimes unavailable and reported as NaN values, while volatility was scaled by the close value and not the percent change, making it an outright poor measure. Not to mention that some tickers exhibited what we can only describe as suspicious pricing patterns &ndash; a day of high volume and low prices would be followed by a day of low volume and high prices, an increase of around several thousand percent yet a sharp decrease in activity.</span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c5"><span class="c0">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;We solved part of this issue with our secondary processing into NumericalData_processed. These condensed the features into Percent Change, Log Volume, Log Market Cap, RSI, Volatility/Close, SMA_Ratio, and SL_MACD. These had no repetitions of information and extracted the key details of each metric. For example, we care about the scale of Volume and Market Cap, not the actual value. We want volatility with respect to the price since an intraday fluctuation of $20 isn&rsquo;t impressive if the stock is priced at $1500 but is massive if it&rsquo;s priced at $30. The SMA 10 and 20 are important only in relation to each other and if there&rsquo;s a break from the trend. Lastly, the signal line and MACD are commonly compared against each other to determine if a stock is overpriced or undervalued. To solve our NaN problem, we just decided that unknown market caps would be considered 0, meaning that we would ignore caps that we didn&rsquo;t know. Lastly, if a closing price ever dropped below $0.01, we cut off all subsequent data. We figured that any ticker dropping that low would be unreliable in the future, and this would solve our exploding-percentage change problem. However, even with these changes there were strange outliers in the data. These were solved with our final processing into NumericalData_refined.</span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c5"><span class="c0">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;After further analysis we determined that stocks had strange fluctuations on days of 0 volume. In these cases, the close would for some reason climb to absurd levels. For example, day i would have a close of $13, volume of 700 and day i+1 would have a close of $78, volume of 0, then day i+2 would have a close of $14, volume of 900. Of course, these fluctuations introduced unwanted noise in our data, so we removed them and recomputed the metrics around them. Then, less than 1% of our dataset was still acting erratic, i.e. having several instances with a percent change greater than 500% which generally equated to those aforementioned suspicious pricing patterns, so we eliminated those tickers and came to our final dataset of clean tickers and information.</span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c5 c6"><span class="c0">In terms of machine learning techniques used, we began with an experiment to fine-tune Google&rsquo;s BERT&mdash;a leading transformer model known for its prowess in natural language understanding. Our initial step involved adapting BERT to analyze stock market headlines, appending an output layer to categorize sentiment into three classes: positive, negative, and neutral. The promising results from this phase encouraged us further. </span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c5 c6"><span class="c0">For subsequent enhancements, we integrated the financial metrics that were collected from Yahoo Finance by employing a customized transformer layer to process this numerical data. This was combined with the outputs from the textual sentiment analysis model from earlier through a dense layer, aiming to create a more comprehensive model. We explored both regression, to predict specific stock price changes, and classification approaches, to categorize price movements as up, down, or unchanged. Preliminary tests indicated that the regression model struggled with convergence, likely due to the high variance in stock price changes. Shifting focus to a classification model yielded improved outcomes, suggesting that categorizing price movement was a more effective strategy given the data&rsquo;s inherent variability.</span></p>
+      <p class="c3 c6"><span class="c0"></span></p>
+      <h3 class="c9" id="h.kwgsqxspis15"><span class="c4">Results</span></h3>
+      <p class="c5"><span class="c1">TODO: Data Preprocessing Visualizations (Kevin and Ronald)</span></p>
+      <p class="c3"><span class="c1"></span></p>
+      <p class="c5 c6"><span class="c0">The collection of histograms, encompassing log volume, log market cap, RSI, percent change, MACD, Volatility/Close, and SMA Ratio, all exhibit transformational changes from their processed to their refined states, underscoring a systematic approach to financial data preprocessing. Initially, the processed data reveals certain commonalities across these features: a prevalence of extreme values, which typically indicates either a high occurrence of smaller entities (in the case of market cap and volume) or extreme market conditions (such as overbought/oversold scenarios depicted by RSI, sharp percent changes in stock prices, and significant divergences in MACD). Such distributions suggest a raw market landscape, rich with idiosyncrasies and marked by the pronounced impact of outliers.</span></p>
+      <p class="c5 c6"><span class="c0">Upon refinement, the datasets display a tempered distribution, where the extremes are noticeably reined in, indicating the application of data normalization techniques. This is particularly evident in the log volume and log market cap histograms, where the high initial peaks&mdash;suggestive of a multitude of low-volume trades and small market caps&mdash;give way to smoother gradients, reflecting a more equitably represented spectrum of market activity. For RSI, the reduction in tail heaviness and the smoothing of percent change histograms imply a mitigation of abnormal market conditions and price movements, leading to a depiction of the market that emphasizes typical trading conditions over anomalous events.</span></p>
+      <p class="c5 c6"><span class="c0">Lastly, the histograms for Volatility/Close and SMA Ratio further substantiate the trend of refinement. The processed data&#39;s focus on the more frequent, yet less impactful, ratios is broadened in the refined histograms to include a wider range of values, balancing the dataset. This shift not only reduces the bias towards lower volatility or more stable price movements relative to a moving average but also furnishes a clearer view into the nuanced dynamics of market behavior. Such refinement is key to ensuring that subsequent analytics, built on these metrics, can draw upon a foundation that is representative of the full market breadth, fostering robustness in analytical models and supporting more reliable financial decision-making.</span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3 c6"><span class="c0"></span></p>
+      <p class="c3"><span class="c1"></span></p>
+      <p class="c5"><span style="overflow: hidden; display: inline-block; margin: 0.00px 0.00px; border: 0.00px solid #000000; transform: rotate(0.00rad) translateZ(0px); -webkit-transform: rotate(0.00rad) translateZ(0px); width: 624.00px; height: 312.00px;"><img alt="" src="images/image11.png" style="width: 624.00px; height: 312.00px; margin-left: 0.00px; margin-top: 0.00px; transform: rotate(0.00rad) translateZ(0px); -webkit-transform: rotate(0.00rad) translateZ(0px);" title=""></span></p>
+      <p class="c5"><span style="overflow: hidden; display: inline-block; margin: 0.00px 0.00px; border: 0.00px solid #000000; transform: rotate(0.00rad) translateZ(0px); -webkit-transform: rotate(0.00rad) translateZ(0px); width: 624.00px; height: 312.00px;"><img alt="" src="images/image10.png" style="width: 624.00px; height: 312.00px; margin-left: 0.00px; margin-top: 0.00px; transform: rotate(0.00rad) translateZ(0px); -webkit-transform: rotate(0.00rad) translateZ(0px);" title=""></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3 c6"><span class="c0"></span></p>
+      <p class="c5"><span style="overflow: hidden; display: inline-block; margin: 0.00px 0.00px; border: 0.00px solid #000000; transform: rotate(0.00rad) translateZ(0px); -webkit-transform: rotate(0.00rad) translateZ(0px); width: 624.00px; height: 312.00px;"><img alt="" src="images/image8.png" style="width: 624.00px; height: 312.00px; margin-left: 0.00px; margin-top: 0.00px; transform: rotate(0.00rad) translateZ(0px); -webkit-transform: rotate(0.00rad) translateZ(0px);" title=""></span></p>
+      <p class="c5"><span style="overflow: hidden; display: inline-block; margin: 0.00px 0.00px; border: 0.00px solid #000000; transform: rotate(0.00rad) translateZ(0px); -webkit-transform: rotate(0.00rad) translateZ(0px); width: 624.00px; height: 312.00px;"><img alt="" src="images/image3.png" style="width: 624.00px; height: 312.00px; margin-left: 0.00px; margin-top: 0.00px; transform: rotate(0.00rad) translateZ(0px); -webkit-transform: rotate(0.00rad) translateZ(0px);" title=""></span></p>
+      <p class="c3 c6"><span class="c0"></span></p>
+      <p class="c5"><span style="overflow: hidden; display: inline-block; margin: 0.00px 0.00px; border: 0.00px solid #000000; transform: rotate(0.00rad) translateZ(0px); -webkit-transform: rotate(0.00rad) translateZ(0px); width: 624.00px; height: 312.00px;"><img alt="" src="images/image13.png" style="width: 624.00px; height: 312.00px; margin-left: 0.00px; margin-top: 0.00px; transform: rotate(0.00rad) translateZ(0px); -webkit-transform: rotate(0.00rad) translateZ(0px);" title=""></span></p>
+      <p class="c5"><span style="overflow: hidden; display: inline-block; margin: 0.00px 0.00px; border: 0.00px solid #000000; transform: rotate(0.00rad) translateZ(0px); -webkit-transform: rotate(0.00rad) translateZ(0px); width: 624.00px; height: 312.00px;"><img alt="" src="images/image9.png" style="width: 624.00px; height: 312.00px; margin-left: 0.00px; margin-top: 0.00px; transform: rotate(0.00rad) translateZ(0px); -webkit-transform: rotate(0.00rad) translateZ(0px);" title=""></span></p>
+      <p class="c3 c6"><span class="c0"></span></p>
+      <p class="c5"><span style="overflow: hidden; display: inline-block; margin: 0.00px 0.00px; border: 0.00px solid #000000; transform: rotate(0.00rad) translateZ(0px); -webkit-transform: rotate(0.00rad) translateZ(0px); width: 624.00px; height: 312.00px;"><img alt="" src="images/image15.png" style="width: 624.00px; height: 312.00px; margin-left: 0.00px; margin-top: 0.00px; transform: rotate(0.00rad) translateZ(0px); -webkit-transform: rotate(0.00rad) translateZ(0px);" title=""></span></p>
+      <p class="c5"><span style="overflow: hidden; display: inline-block; margin: 0.00px 0.00px; border: 0.00px solid #000000; transform: rotate(0.00rad) translateZ(0px); -webkit-transform: rotate(0.00rad) translateZ(0px); width: 624.00px; height: 312.00px;"><img alt="" src="images/image17.png" style="width: 624.00px; height: 312.00px; margin-left: 0.00px; margin-top: 0.00px; transform: rotate(0.00rad) translateZ(0px); -webkit-transform: rotate(0.00rad) translateZ(0px);" title=""></span></p>
+      <p class="c5"><span style="overflow: hidden; display: inline-block; margin: 0.00px 0.00px; border: 0.00px solid #000000; transform: rotate(0.00rad) translateZ(0px); -webkit-transform: rotate(0.00rad) translateZ(0px); width: 624.00px; height: 312.00px;"><img alt="" src="images/image16.png" style="width: 624.00px; height: 312.00px; margin-left: 0.00px; margin-top: 0.00px; transform: rotate(0.00rad) translateZ(0px); -webkit-transform: rotate(0.00rad) translateZ(0px);" title=""></span></p>
+      <p class="c5"><span style="overflow: hidden; display: inline-block; margin: 0.00px 0.00px; border: 0.00px solid #000000; transform: rotate(0.00rad) translateZ(0px); -webkit-transform: rotate(0.00rad) translateZ(0px); width: 624.00px; height: 312.00px;"><img alt="" src="images/image12.png" style="width: 624.00px; height: 312.00px; margin-left: 0.00px; margin-top: 0.00px; transform: rotate(0.00rad) translateZ(0px); -webkit-transform: rotate(0.00rad) translateZ(0px);" title=""></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3 c6"><span class="c0"></span></p>
+      <p class="c5"><span style="overflow: hidden; display: inline-block; margin: 0.00px 0.00px; border: 0.00px solid #000000; transform: rotate(0.00rad) translateZ(0px); -webkit-transform: rotate(0.00rad) translateZ(0px); width: 624.00px; height: 312.00px;"><img alt="" src="images/image14.png" style="width: 624.00px; height: 312.00px; margin-left: 0.00px; margin-top: 0.00px; transform: rotate(0.00rad) translateZ(0px); -webkit-transform: rotate(0.00rad) translateZ(0px);" title=""></span></p>
+      <p class="c5"><span style="overflow: hidden; display: inline-block; margin: 0.00px 0.00px; border: 0.00px solid #000000; transform: rotate(0.00rad) translateZ(0px); -webkit-transform: rotate(0.00rad) translateZ(0px); width: 624.00px; height: 312.00px;"><img alt="" src="images/image4.png" style="width: 624.00px; height: 312.00px; margin-left: 0.00px; margin-top: 0.00px; transform: rotate(0.00rad) translateZ(0px); -webkit-transform: rotate(0.00rad) translateZ(0px);" title=""></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3 c6"><span class="c0"></span></p>
+      <p class="c5"><span style="overflow: hidden; display: inline-block; margin: 0.00px 0.00px; border: 0.00px solid #000000; transform: rotate(0.00rad) translateZ(0px); -webkit-transform: rotate(0.00rad) translateZ(0px); width: 624.00px; height: 312.00px;"><img alt="" src="images/image6.png" style="width: 624.00px; height: 312.00px; margin-left: 0.00px; margin-top: 0.00px; transform: rotate(0.00rad) translateZ(0px); -webkit-transform: rotate(0.00rad) translateZ(0px);" title=""></span></p>
+      <p class="c5"><span style="overflow: hidden; display: inline-block; margin: 0.00px 0.00px; border: 0.00px solid #000000; transform: rotate(0.00rad) translateZ(0px); -webkit-transform: rotate(0.00rad) translateZ(0px); width: 624.00px; height: 312.00px;"><img alt="" src="images/image5.png" style="width: 624.00px; height: 312.00px; margin-left: 0.00px; margin-top: 0.00px; transform: rotate(0.00rad) translateZ(0px); -webkit-transform: rotate(0.00rad) translateZ(0px);" title=""></span></p>
+      <p class="c3 c6"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c5"><span>Shown below is the distribution of sentiment labels in the dataset that we used to train our experimental sentiment model.</span></p>
+      <p class="c5"><span style="overflow: hidden; display: inline-block; margin: 0.00px 0.00px; border: 0.00px solid #000000; transform: rotate(0.00rad) translateZ(0px); -webkit-transform: rotate(0.00rad) translateZ(0px); width: 624.00px; height: 477.00px;"><img alt="" src="images/sentiment_dist.JPG" style="width: 624.00px; height: 477.00px; margin-left: 0.00px; margin-top: 0.00px; transform: rotate(0.00rad) translateZ(0px); -webkit-transform: rotate(0.00rad) translateZ(0px);" title=""></span></p>
+      <p class="c5"><span>Also included is a visualization of results obtained by our experimental sentiment model. We see that there is rapid convergence by the first epoch, but after continued training, the model overfits, as evidenced by a clear divergence between training and validation loss over the 10 epochs we trained for. If we were to use this model in practice, we would select the model weights obtained by epoch 1, as the validation loss has dropped significantly by that point and is still tightly correlated with the training loss. </span></p>
+      <p class="c5"><span style="overflow: hidden; display: inline-block; margin: 0.00px 0.00px; border: 0.00px solid #000000; transform: rotate(0.00rad) translateZ(0px); -webkit-transform: rotate(0.00rad) translateZ(0px); width: 624.00px; height: 936.00px;"><img alt="" src="images/image2.png" style="width: 624.00px; height: 936.00px; margin-left: 0.00px; margin-top: 0.00px; transform: rotate(0.00rad) translateZ(0px); -webkit-transform: rotate(0.00rad) translateZ(0px);" title=""></span></p>
+      <p class="c3 c6"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c5"><span class="c0">Shown below is the distribution of the labels in the dataset that the classification model was trained on. It is important to note that the number of neutral labels is much smaller than the number of positive and negative labels, likely due to the fact that the range of percent change for the neutral label is from -0.5% to +0.5%, which is a rather narrow margin. For future training, we may consider increasing this range to make the label distribution more even.</span></p>
+      <p class="c5"><span style="overflow: hidden; display: inline-block; margin: 0.00px 0.00px; border: 0.00px solid #000000; transform: rotate(0.00rad) translateZ(0px); -webkit-transform: rotate(0.00rad) translateZ(0px); width: 624.00px; height: 619.00px;"><img alt="" src="images/labels_dist.JPG" style="width: 624.00px; height: 619.00px; margin-left: 0.00px; margin-top: 0.00px; transform: rotate(0.00rad) translateZ(0px); -webkit-transform: rotate(0.00rad) translateZ(0px);" title=""></span></p>
+      <p class="c5"><span class="c0">Below is the training graph from our classification model. Our preliminary results are promising, but do present findings for us to investigate further, specifically the fact that our loss has seemed to plateau yet our accuracy and f1 scores over time continue to show an upwards trend. We have already confirmed that our model hasn&rsquo;t collapsed (outputting only one class no matter the input), though it exclusively outputs positive or negative. We hypothesize that this is because neutral data points are underrepresented in the data, as we currently only classify percent changes between +/- 0.5% as neutral. In future iterations of the model, we will seek to understand both of these curiosities more fully.</span></p>
+      <p class="c5"><span style="overflow: hidden; display: inline-block; margin: 0.00px 0.00px; border: 0.00px solid #000000; transform: rotate(0.00rad) translateZ(0px); -webkit-transform: rotate(0.00rad) translateZ(0px); width: 542.50px; height: 813.09px;"><img alt="" src="images/image7.png" style="width: 542.50px; height: 813.09px; margin-left: 0.00px; margin-top: 0.00px; transform: rotate(0.00rad) translateZ(0px); -webkit-transform: rotate(0.00rad) translateZ(0px);" title=""></span></p>
+      <p class="c10 c12"><span class="c0"></span></p>
+      <p class="c10 c12"><span class="c0"></span></p>
+      <p class="c3 c6"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c3"><span class="c0"></span></p>
+      <p class="c10"><span class="c1">Gantt Chart</span><span style="overflow: hidden; display: inline-block; margin: 0.00px 0.00px; border: 0.00px solid #000000; transform: rotate(0.00rad) translateZ(0px); -webkit-transform: rotate(0.00rad) translateZ(0px); width: 785.50px; height: 484.75px;"><img alt="" src="images/image1.png" style="width: 785.50px; height: 484.75px; margin-left: 0.00px; margin-top: 0.00px; transform: rotate(0.00rad) translateZ(0px); -webkit-transform: rotate(0.00rad) translateZ(0px);" title=""></span></p>
+      <p class="c12 c16"><span class="c1"></span></p>
+      <p class="c10"><span class="c1">Midterm Contributions</span></p>
+      <a id="t.83d48eba3f747a8598699a97251dceef1dc37f36"></a><a id="t.0"></a>
+      <table class="c13">
+         <tr class="c8">
+            <td class="c7" colspan="1" rowspan="1">
+               <p class="c2"><span class="c0">Team Member</span></p>
+            </td>
+            <td class="c7" colspan="1" rowspan="1">
+               <p class="c2"><span class="c0">Contribution</span></p>
+            </td>
+         </tr>
+         <tr class="c8">
+            <td class="c7" colspan="1" rowspan="1">
+               <p class="c2"><span class="c0">Vikas</span></p>
+            </td>
+            <td class="c7" colspan="1" rowspan="1">
+               <p class="c2"><span class="c0">Filtered and cleaned headline data for model training, prepared classification model</span></p>
+            </td>
+         </tr>
+         <tr class="c8">
+            <td class="c7" colspan="1" rowspan="1">
+               <p class="c2"><span class="c0">Liam</span></p>
+            </td>
+            <td class="c7" colspan="1" rowspan="1">
+               <p class="c2"><span class="c0">Prepared model for training</span></p>
+            </td>
+         </tr>
+         <tr class="c8">
+            <td class="c7" colspan="1" rowspan="1">
+               <p class="c2"><span class="c0">Kevin</span></p>
+            </td>
+            <td class="c7" colspan="1" rowspan="1">
+               <p class="c2"><span class="c0">Provided visualizations and analysis of financial metrics to demonstrate effectiveness of data cleaning and inform future model iterations</span></p>
+            </td>
+         </tr>
+         <tr class="c8">
+            <td class="c7" colspan="1" rowspan="1">
+               <p class="c2"><span class="c0">Nick</span></p>
+            </td>
+            <td class="c7" colspan="1" rowspan="1">
+               <p class="c2"><span class="c0">Filtered and cleaned financial metric data for model training</span></p>
+            </td>
+         </tr>
+         <tr class="c8">
+            <td class="c7" colspan="1" rowspan="1">
+               <p class="c2"><span class="c0">Ronald</span></p>
+            </td>
+            <td class="c7" colspan="1" rowspan="1">
+               <p class="c2"><span class="c0">Prepared midterm report / assisted in data visualizations</span></p>
+            </td>
+         </tr>
+      </table>
+      <p class="c10 c12"><span class="c0"></span></p>
+      <p class="c10 c12"><span class="c0"></span></p>
+      <p class="c10"><span class="c0">References</span></p>
+      <p class="c16 c12"><span class="c0"></span></p>
+      <p class="c11"><span>[1] H. Kaeley, Y. Qiao, N. Bagherzadeh, Support for Stock Trend Prediction Using Transformers and Sentiment Analysis, </span><span><a class="c14" href="https://www.google.com/url?q=https://arxiv.org/pdf/2305.14368.pdf&amp;sa=D&amp;source=editors&amp;ust=1712012842252611&amp;usg=AOvVaw0nPa4gKE6Z8y0s5qygaoGM">https://arxiv.org/pdf/2305.14368.pdf</a></span><span class="c0">&nbsp;(accessed Feb. 22, 2024).</span></p>
+      <p class="c11"><span class="c0">[2] J. Deveikyte, H. Geman, C. Piccari, A. Provetti, A sentiment analysis approach to the prediction of market volatility, https://www.frontiersin.org/articles/10.3389/frai.2022.836809/full (accessed Feb. 22, 2024).</span></p>
+      <p class="c11"><span class="c0">[3] K. Taylor, V. J. Ng, Natural Language Processing and Multimodal Stock Price Prediction, https://arxiv.org/pdf/2401.01487.pdf (accessed Feb. 22, 2024).</span></p>
+      <p class="c11"><span class="c0">[4] L. Ariton, No, lstms can&rsquo;t predict stock prices - Analytics Vidhya - Medium, https://medium.com/analytics-vidhya/no-lstms-cant-predict-stock-prices-11f10dcb35d6 (accessed Feb. 22, 2024).</span></p>
+      <p class="c11"><span>[5] S. Paul, S. Vishnoi, Real-Time stock trend prediction via sentiment analysis of news article, </span><span><a class="c14" href="https://www.google.com/url?q=https://doi.org/10.2139/ssrn.3753015&amp;sa=D&amp;source=editors&amp;ust=1712012842253185&amp;usg=AOvVaw0CwDXungkQWq3SRv5JmGlM">https://doi.org/10.2139/ssrn.3753015</a></span><span class="c0">&nbsp;(accessed Feb. 22, 2024).</span></p>
+      <p class="c11"><span class="c0">[6] S. Selvin, V. Ravi, G. E.A., V. K. Menon, and S. K.P., Stock Price Prediction Using LSTM, RNN and CNN-Sliding Window Model, https://www.researchgate.net/profile/Vijay-Menon-7/publication/325666831_NSE_Stock_Market_Prediction_Using_Deep-Learning_Models/links/5b287f67aca2727335b70828/NSE-Stock-Market-Prediction-Using-Deep-Learning-Models.pdf (accessed Feb. 22, 2024).</span></p>
+      <p class="c11"><span>[7] S. Vohra, P. Savaridassan, Stock price trend analysis and prediction of closing price using LSTM, </span><span><a class="c14" href="https://www.google.com/url?q=http://dx.doi.org/10.1109/iccci56745.2023.10128260&amp;sa=D&amp;source=editors&amp;ust=1712012842253489&amp;usg=AOvVaw1owzV0CMUPF2nRtzVDtDrL">http://dx.doi.org/10.1109/iccci56745.2023.10128260</a></span><span class="c0">&nbsp;(accessed Feb. 22, 2024).</span></p>
+   </body>
+</html>
