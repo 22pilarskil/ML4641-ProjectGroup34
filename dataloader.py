@@ -38,7 +38,7 @@ class HeadlineDataset(Dataset):
             raise IndexError("Index out of bounds")
         return self.get_item(idx)
 
-    def get_item(self, idx, excludes=["Log Market Cap"]):
+    def get_item(self, idx, excludes=["Log Market Cap"], threshold=0.01):
 
         headline_info = self.data.iloc[idx]
         ticker = headline_info['ticker']
@@ -106,9 +106,9 @@ class HeadlineDataset(Dataset):
             }
         else:
             # Create label classes
-            if percentage_change > 0.005:
+            if percentage_change > threshold:
                 label = 0 # Increase
-            elif percentage_change < -0.005: 
+            elif percentage_change < -threshold: 
                 label = 1 # Decrease
             else:
                 label = 2 # No change

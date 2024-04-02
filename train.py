@@ -11,6 +11,7 @@ def run_training():
     data_folder = "data/NumericalData_refined_v3/"
     headlines_file = "data/output_dataset.csv"
     pretrained_model_name = 'bert-base-uncased'
+    results_dir = "./training_results_0.01_threshold"
     batch_size = 32
     is_regression = False  # Adjust based on your task
 
@@ -31,7 +32,6 @@ def run_training():
     optimizer = AdamW(model.parameters(), lr=2e-7)
 
     epochs = 100  # Adjust as needed
-    results_dir = "./training_results_no_market_cap"
     os.makedirs(results_dir, exist_ok=True)
     weights_dir = os.path.join(results_dir, "weights")
     os.makedirs(weights_dir, exist_ok=True)
