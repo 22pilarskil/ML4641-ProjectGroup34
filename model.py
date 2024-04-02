@@ -3,9 +3,9 @@ from torch import nn
 from transformers import BertModel
 from torch.nn import TransformerEncoder, TransformerEncoderLayer
 
-class BertForSentimentAnalysis(nn.Module):
+class StockPredictor(nn.Module):
     def __init__(self, pretrained_model_name='bert-base-uncased', num_labels=3, num_financial_metrics=6, seq_length=10, hidden_dim=11, is_regression=True):
-        super(BertForSentimentAnalysis, self).__init__()
+        super(StockPredictor, self).__init__()
         
         self.bert = BertModel.from_pretrained(pretrained_model_name)
         self.is_regression = is_regression  # Store the mode of the model

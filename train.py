@@ -2,7 +2,7 @@ import os
 import csv
 import torch
 from transformers import AdamW
-from model_sentiment import BertForSentimentAnalysis
+from model import StockPredictor
 from dataloader import create_data_loaders
 from run_model import train_model, evaluate_model
 
@@ -18,7 +18,7 @@ def run_training():
     train_loader, val_loader, test_loader = create_data_loaders(headlines_file, data_folder, trading_days_before=10, 
                                                                 trading_days_after=-1, batch_size=batch_size, is_regression=is_regression)
 
-    model = BertForSentimentAnalysis(pretrained_model_name=pretrained_model_name, is_regression=is_regression)
+    model = StockPredictor(pretrained_model_name=pretrained_model_name, is_regression=is_regression)
     if torch.cuda.device_count() > 1:
         model = torch.nn.DataParallel(model)
 

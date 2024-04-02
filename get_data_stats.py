@@ -28,12 +28,8 @@ def process_pickle_files(directory):
 
     return max_vals, min_vals
 
-directory = 'data/NumericalData_processed'
-max_vals, min_vals = process_pickle_files(directory)
-print(f"Max values across all DataFrames for {directory}:", max_vals)
-print(f"Min values across all DataFrames for {directory}:", min_vals)
+directory = 'data/NumericalData_refined_v3'
 
-directory = '../NumericalData_processed'
 max_vals, min_vals = process_pickle_files(directory)
 print(f"Max values across all DataFrames for {directory}:", max_vals)
 print(f"Min values across all DataFrames for {directory}:", min_vals)
